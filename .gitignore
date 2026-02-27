@@ -1,0 +1,33 @@
+# Environment
+.env
+.env:Zone.Identifier
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+
+# Media files (downloaded reels, audio)
+*.mp4
+*.wav
+*.mp3
+*.webm
+tmp/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Whisper model cache
+whisper_models/

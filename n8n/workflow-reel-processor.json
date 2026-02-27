@@ -1,0 +1,230 @@
+{
+  "name": "Telegram Reel Processor",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": ["message"],
+        "additionalFields": {}
+      },
+      "id": "telegram-trigger",
+      "name": "Telegram Trigger",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.1,
+      "position": [250, 300],
+      "credentials": {
+        "telegramApi": {
+          "id": "TELEGRAM_CREDENTIAL_ID",
+          "name": "Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "leftValue": "={{ $json.message.text }}",
+              "rightValue": "instagram.com",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ]
+        }
+      },
+      "id": "validate-url",
+      "name": "Is Instagram URL?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [470, 300]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "⏳ Processing your reel... This takes about 30-60 seconds.",
+        "additionalFields": {}
+      },
+      "id": "send-processing",
+      "name": "Send Processing Message",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [690, 200],
+      "credentials": {
+        "telegramApi": {
+          "id": "TELEGRAM_CREDENTIAL_ID",
+          "name": "Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8000/process-reel",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ reel_url: $('Telegram Trigger').item.json.message.text.trim() }) }}",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "id": "call-api",
+      "name": "Process Reel API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [910, 200]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "={{ '✅ *' + $json.plan_title + '*\\n\\n' + $json.plan_summary + '\\n\\n📊 ' + $json.tasks_count + ' tasks | ⏱️ ' + $json.total_hours + 'h | 🎯 Relevance: ' + Math.round($json.relevance_score * 100) + '%\\n\\n_Full plan incoming as a file below. Review it, reply with changes, or 👍 to approve._' }}",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "id": "send-summary",
+      "name": "Send Summary",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [1130, 100],
+      "credentials": {
+        "telegramApi": {
+          "id": "TELEGRAM_CREDENTIAL_ID",
+          "name": "Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendDocument",
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "binaryData": false,
+        "documentUrl": "",
+        "additionalFields": {
+          "caption": "📋 Full implementation plan — review and reply with feedback",
+          "parse_mode": "Markdown"
+        }
+      },
+      "id": "send-plan-file",
+      "name": "Send Plan File",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [1350, 100],
+      "credentials": {
+        "telegramApi": {
+          "id": "TELEGRAM_CREDENTIAL_ID",
+          "name": "Telegram Bot"
+        }
+      },
+      "_comment": "NOTE: Telegram sendDocument needs a file. Since we have the markdown as text, an alternative is to split the plan_markdown into multiple messages using a Code node. See the 'Split Plan Messages' node below."
+    },
+    {
+      "parameters": {
+        "jsCode": "// Split plan markdown into Telegram-friendly chunks (max 4096 chars)\nconst planMd = $('Process Reel API').item.json.plan_markdown;\nconst chatId = $('Telegram Trigger').item.json.message.chat.id;\nconst maxLen = 4000;\n\nconst chunks = [];\nlet current = '';\nconst lines = planMd.split('\\n');\n\nfor (const line of lines) {\n  if ((current + '\\n' + line).length > maxLen && current.length > 0) {\n    chunks.push(current);\n    current = line;\n  } else {\n    current = current ? current + '\\n' + line : line;\n  }\n}\nif (current) chunks.push(current);\n\nreturn chunks.map(chunk => ({ json: { chatId, text: chunk } }));"
+      },
+      "id": "split-plan",
+      "name": "Split Plan Messages",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1130, 300]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "={{ $json.text }}",
+        "additionalFields": {}
+      },
+      "id": "send-plan-chunks",
+      "name": "Send Plan Chunks",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [1350, 300],
+      "credentials": {
+        "telegramApi": {
+          "id": "TELEGRAM_CREDENTIAL_ID",
+          "name": "Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "❌ Failed to process reel. Please check the URL and try again.",
+        "additionalFields": {}
+      },
+      "id": "send-error",
+      "name": "Send Error",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [1130, 500],
+      "credentials": {
+        "telegramApi": {
+          "id": "TELEGRAM_CREDENTIAL_ID",
+          "name": "Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "🔗 Please send an Instagram Reel URL (instagram.com/reel/...)",
+        "additionalFields": {}
+      },
+      "id": "send-invalid",
+      "name": "Not a Reel URL",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [690, 500],
+      "credentials": {
+        "telegramApi": {
+          "id": "TELEGRAM_CREDENTIAL_ID",
+          "name": "Telegram Bot"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [{ "node": "Is Instagram URL?", "type": "main", "index": 0 }]
+      ]
+    },
+    "Is Instagram URL?": {
+      "main": [
+        [{ "node": "Send Processing Message", "type": "main", "index": 0 }],
+        [{ "node": "Not a Reel URL", "type": "main", "index": 0 }]
+      ]
+    },
+    "Send Processing Message": {
+      "main": [
+        [{ "node": "Process Reel API", "type": "main", "index": 0 }]
+      ]
+    },
+    "Process Reel API": {
+      "main": [
+        [
+          { "node": "Send Summary", "type": "main", "index": 0 },
+          { "node": "Split Plan Messages", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Split Plan Messages": {
+      "main": [
+        [{ "node": "Send Plan Chunks", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": [
+    { "name": "vibe-marketing" }
+  ],
+  "pinData": {},
+  "_comment": "SETUP: 1) Create Telegram bot via @BotFather, 2) Add Telegram credential in n8n with bot token, 3) Replace TELEGRAM_CREDENTIAL_ID with actual credential ID, 4) Ensure FastAPI server is running on localhost:8000, 5) Connect 'Process Reel API' error output to 'Send Error' node. FLOW: User sends reel link → bot sends 'processing' → API processes → bot sends summary + full plan as messages → user reviews and replies with feedback."
+}
