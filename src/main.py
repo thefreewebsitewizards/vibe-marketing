@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from src.routers import health, reel
+from src.routers import health, reel, plans
 from src.services.telegram_bot import start_bot, stop_bot
 
 
@@ -30,3 +30,4 @@ app.add_middleware(
 
 app.include_router(health.router)
 app.include_router(reel.router)
+app.include_router(plans.router)
