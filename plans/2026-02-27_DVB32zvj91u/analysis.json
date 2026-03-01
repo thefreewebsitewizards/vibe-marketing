@@ -1,0 +1,26 @@
+{
+  "category": "ai_automation",
+  "summary": "Creator demonstrates three specific Claude Code skills (GSD, Superpowers, and Skill Creator) that can dramatically increase productivity by utilizing features most users ignore. Shows actual tool interfaces and promises significant output multiplication.",
+  "key_insights": [
+    "We could create content around 'You're probably using [our AI tools] wrong if you're not...' to highlight underutilized features in our chatbot/automation setups",
+    "Apply the 'skills framework' concept to our GHL automations - create reusable automation templates that clients can deploy repeatedly rather than building from scratch each time",
+    "We could position our AI chatbot service as 'putting your customer conversations on steroids' by combining multiple AI capabilities",
+    "Create a 'skill library' for our clients - pre-built automation sequences they can save and reuse (similar to the Create Skill concept)",
+    "Use the urgency of 'late night and early morning sessions' to sell time-saving automation - 'Stop those 3am manual follow-up sessions'",
+    "We could develop our own 'GSD' (Get Shit Done) automation package that combines website, chatbot, and follow-up systems"
+  ],
+  "swipe_phrases": [
+    "You're probably using [your CRM/website/chatbot] wrong if [ad headline]",
+    "This is self-explanatory [email - confident, no-nonsense tone]",
+    "You are going to significantly multiply your output [website - results promise]",
+    "literally putting your [business/marketing/lead gen] on steroids [ad copy]",
+    "This is actually a game changer [email subject line]",
+    "Ask me how I know that [outreach - creates curiosity]",
+    "your productivity is just going to skyrocket [website testimonial style]",
+    "Don't ignore this [tool/feature/system] [ad headline - creates FOMO]",
+    "You should get started with using right now [CTA language]",
+    "many late night and early morning sessions [pain point for outreach]"
+  ],
+  "relevance_score": 0.85,
+  "raw_response": "```json\n{\n  \"category\": \"ai_automation\",\n  \"summary\": \"Creator demonstrates three specific Claude Code skills (GSD, Superpowers, and Skill Creator) that can dramatically increase productivity by utilizing features most users ignore. Shows actual tool interfaces and promises significant output multiplication.\",\n  \"key_insights\": [\n    \"We could create content around 'You're probably using [our AI tools] wrong if you're not...' to highlight underutilized features in our chatbot/automation setups\",\n    \"Apply the 'skills framework' concept to our GHL automations - create reusable automation templates that clients can deploy repeatedly rather than building from scratch each time\",\n    \"We could position our AI chatbot service as 'putting your customer conversations on steroids' by combining multiple AI capabilities\",\n    \"Create a 'skill library' for our clients - pre-built automation sequences they can save and reuse (similar to the Create Skill concept)\",\n    \"Use the urgency of 'late night and early morning sessions' to sell time-saving automation - 'Stop those 3am manual follow-up sessions'\",\n    \"We could develop our own 'GSD' (Get Shit Done) automation package that combines website, chatbot, and follow-up systems\"\n  ],\n  \"swipe_phrases\": [\n    \"You're probably using [your CRM/website/chatbot] wrong if [ad headline]\",\n    \"This is self-explanatory [email - confident, no-nonsense tone]\",\n    \"You are going to significantly multiply your output [website - results promise]\",\n    \"literally putting your [business/marketing/lead gen] on steroids [ad copy]\",\n    \"This is actually a game changer [email subject line]\",\n    \"Ask me how I know that [outreach - creates curiosity]\",\n    \"your productivity is just going to skyrocket [website testimonial style]\",\n    \"Don't ignore this [tool/feature/system] [ad headline - creates FOMO]\",\n    \"You should get started with using right now [CTA language]\",\n    \"many late night and early morning sessions [pain point for outreach]\"\n  ],\n  \"relevance_score\": 0.85\n}\n```"
+}

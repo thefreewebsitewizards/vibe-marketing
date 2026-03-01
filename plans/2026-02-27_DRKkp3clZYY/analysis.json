@@ -1,0 +1,26 @@
+{
+  "category": "sales",
+  "summary": "Sales coach teaches how to handle no-shows professionally by avoiding desperation language and maintaining frame control. Key strategy: apologize for 'running late,' offer immediate reschedule, then put responsibility back on prospect to prove importance.",
+  "key_insights": [
+    "We could adapt the 'running late' excuse for our appointment setting - when prospects no-show, have our AI chatbot or team member say our previous consultation ran over due to complex setup needs",
+    "Apply the frame control technique by never saying 'if you have time' - instead use 'if this is still a priority' to maintain our value position when rescheduling discovery calls",
+    "We could implement a two-step no-show sequence: immediate 'running late' outreach, then 5-minute delayed 'put it in their court' message through our automated follow-up system",
+    "Use the psychological positioning of making prospects prove the meeting is important to them rather than us chasing - builds scarcity around our consultation spots",
+    "We could train our appointment setters to never sound desperate when prospects miss calls - desperation kills callback rates and undermines our premium positioning",
+    "Apply the 'I'll open up my calendar and see if I can make it work' language to make our availability seem exclusive and valuable rather than always available"
+  ],
+  "swipe_phrases": [
+    "My last call went 10 minutes over - we were talking for a while and there was so much going on with onboarding [outreach]",
+    "I completely blanked on our call [outreach]",
+    "If this is still a priority, let me know and I can find some time in my schedule [email/outreach]",
+    "Only if it's important to you, so let me know [email/outreach]",
+    "I'll open up my calendar and see if I can make it work [outreach]",
+    "Their time was ultimately worth less than mine [internal mindset]",
+    "You're subconsciously telling them that you don't respect your time [training material]",
+    "So much going on with onboarding [social proof phrase for ads]",
+    "If you have some time we can pop back in [avoid this - noted as weak language]",
+    "Probably some of the best advice that I've heard [testimonial format for social posts]"
+  ],
+  "relevance_score": 0.9,
+  "raw_response": "```json\n{\n  \"category\": \"sales\",\n  \"summary\": \"Sales coach teaches how to handle no-shows professionally by avoiding desperation language and maintaining frame control. Key strategy: apologize for 'running late,' offer immediate reschedule, then put responsibility back on prospect to prove importance.\",\n  \"key_insights\": [\n    \"We could adapt the 'running late' excuse for our appointment setting - when prospects no-show, have our AI chatbot or team member say our previous consultation ran over due to complex setup needs\",\n    \"Apply the frame control technique by never saying 'if you have time' - instead use 'if this is still a priority' to maintain our value position when rescheduling discovery calls\",\n    \"We could implement a two-step no-show sequence: immediate 'running late' outreach, then 5-minute delayed 'put it in their court' message through our automated follow-up system\",\n    \"Use the psychological positioning of making prospects prove the meeting is important to them rather than us chasing - builds scarcity around our consultation spots\",\n    \"We could train our appointment setters to never sound desperate when prospects miss calls - desperation kills callback rates and undermines our premium positioning\",\n    \"Apply the 'I'll open up my calendar and see if I can make it work' language to make our availability seem exclusive and valuable rather than always available\"\n  ],\n  \"swipe_phrases\": [\n    \"My last call went 10 minutes over - we were talking for a while and there was so much going on with onboarding [outreach]\",\n    \"I completely blanked on our call [outreach]\", \n    \"If this is still a priority, let me know and I can find some time in my schedule [email/outreach]\",\n    \"Only if it's important to you, so let me know [email/outreach]\",\n    \"I'll open up my calendar and see if I can make it work [outreach]\",\n    \"Their time was ultimately worth less than mine [internal mindset]\",\n    \"You're subconsciously telling them that you don't respect your time [training material]\",\n    \"So much going on with onboarding [social proof phrase for ads]\",\n    \"If you have some time we can pop back in [avoid this - noted as weak language]\",\n    \"Probably some of the best advice that I've heard [testimonial format for social posts]\"\n  ],\n  \"relevance_score\": 0.9\n}\n```"
+}

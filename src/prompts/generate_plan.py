@@ -28,6 +28,7 @@ Available tools and platforms:
 - Meta Ads — Facebook/Instagram advertising
 - Website — thefreewebsitewizards.com
 - Telegram bot — notifications and triggers
+- sales_script — edit specific sections of Dylan's sales call script via PUT /api/script/sections/{section_id}
 
 Respond with valid JSON only. No markdown, no explanation outside the JSON."""
 
@@ -69,11 +70,33 @@ Rules:
 - Every task must use at least one of our available tools
 - Tasks that involve copy/messaging MUST include the actual draft text, not just "write copy"
 - Incorporate the swipe phrases directly into task descriptions and deliverables
-- If a task requires data we don't have yet, create a preceding task to gather it"""
+- If a task requires data we don't have yet, create a preceding task to gather it
+- Do NOT duplicate tasks that already exist in previous plans (see existing plans below)"""
+
+EXISTING_PLANS_SECTION = """
+
+**Existing plans (avoid duplicating these tasks):**
+{existing_plans}"""
+
+SCRIPT_CONTEXT_SECTION = """
+
+**Current Sales Script (modify sections via API):**
+{script_content}
+
+**Valid section IDs for PUT /api/script/sections/{{id}}:**
+{section_ids}
+
+When tasks involve script changes:
+- Reference the EXACT section ID (e.g., "price_objection")
+- Show the current text AND the replacement text
+- Use tool "sales_script" with the section ID for script edit tasks"""
 
 
 def build_plan_prompt(
-    analysis: AnalysisResult, metadata: ReelMetadata
+    analysis: AnalysisResult, metadata: ReelMetadata,
+    existing_plans_summary: str = "",
+    script_context: str = "",
+    script_section_ids: str = "",
 ) -> tuple[str, str]:
     insights_formatted = "\n".join(f"- {i}" for i in analysis.key_insights)
     phrases_formatted = "\n".join(f"- {p}" for p in analysis.swipe_phrases) if analysis.swipe_phrases else "- None extracted"
@@ -87,4 +110,16 @@ def build_plan_prompt(
         insights_formatted=insights_formatted,
         phrases_formatted=phrases_formatted,
     )
+
+    if existing_plans_summary:
+        user_prompt += EXISTING_PLANS_SECTION.format(
+            existing_plans=existing_plans_summary,
+        )
+
+    if script_context:
+        user_prompt += SCRIPT_CONTEXT_SECTION.format(
+            script_content=script_context,
+            section_ids=script_section_ids,
+        )
+
     return SYSTEM_PROMPT, user_prompt

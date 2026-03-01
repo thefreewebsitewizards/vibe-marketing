@@ -53,7 +53,33 @@ def update_plan_status(reel_id: str, new_status: PlanStatus) -> bool:
                 json.dump(meta, f, indent=2)
 
     logger.info(f"Plan {reel_id} status → {new_status.value}")
+
+    # Auto-execution trigger: notify when a plan is approved
+    if new_status == PlanStatus.APPROVED:
+        _trigger_execution(reel_id, plan_dir_name)
+
     return True
+
+
+def _trigger_execution(reel_id: str, plan_dir_name: str | None) -> None:
+    """Fire-and-forget notification that a plan is ready for execution.
+    Writes a trigger file that Claude Code or a cron job can watch for."""
+    trigger_path = settings.plans_dir / "_approved_queue.json"
+    queue = []
+    if trigger_path.exists():
+        with open(trigger_path) as f:
+            queue = json.load(f)
+
+    # Avoid duplicate entries
+    if not any(item["reel_id"] == reel_id for item in queue):
+        queue.append({
+            "reel_id": reel_id,
+            "plan_dir": plan_dir_name,
+            "approved_at": __import__("datetime").datetime.now().isoformat(),
+        })
+        with open(trigger_path, "w") as f:
+            json.dump(queue, f, indent=2)
+        logger.info(f"Execution trigger: {reel_id} added to approved queue")
 
 
 def get_plans_by_status(status: PlanStatus) -> list[dict]:
@@ -77,3 +103,39 @@ def find_plan_by_id(reel_id: str) -> dict | None:
         if entry["reel_id"] == reel_id:
             return entry
     return None
+
+
+def is_duplicate(reel_id: str) -> bool:
+    """Check if this reel has already been processed."""
+    return find_plan_by_id(reel_id) is not None
+
+
+def get_past_plan_summaries(limit: int = 10) -> str:
+    """Get summaries of recent plans for knowledge base cross-referencing.
+    Returns a text block the planner can use to avoid duplicate recommendations."""
+    index = get_index()
+    plans = index.get("plans", [])
+    if not plans:
+        return ""
+
+    recent = plans[-limit:]
+    lines = []
+    for p in recent:
+        plan_dir = settings.plans_dir / p["plan_dir"]
+        plan_md = plan_dir / "plan.md"
+        if plan_md.exists():
+            # Extract just the title and task titles from the plan
+            content = plan_md.read_text()
+            task_titles = []
+            for line in content.split("\n"):
+                if line.startswith("### "):
+                    # Strip "### 1. " prefix
+                    title = line.lstrip("#").strip()
+                    if title and title[0].isdigit():
+                        title = title.split(". ", 1)[-1]
+                    task_titles.append(title)
+            lines.append(f"- [{p['reel_id']}] {p['title']}: {', '.join(task_titles)}")
+        else:
+            lines.append(f"- [{p['reel_id']}] {p['title']}")
+
+    return "\n".join(lines)

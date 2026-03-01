@@ -46,6 +46,36 @@ def write_plan(result: PipelineResult) -> Path:
     return plan_dir
 
 
+def write_plan_md(plan, plan_md_path: Path) -> None:
+    """Overwrite just the plan.md file (used for refinement)."""
+    from src.models import ImplementationPlan
+    lines = [
+        f"# {plan.title}",
+        "",
+        "## Summary",
+        "",
+        plan.summary,
+        "",
+        "## Tasks",
+        "",
+    ]
+    for i, task in enumerate(plan.tasks, 1):
+        lines.append(f"### {i}. {task.title}")
+        lines.append(f"**Priority:** {task.priority} | **Hours:** {task.estimated_hours:.1f}h | **Tools:** {', '.join(task.tools)}")
+        lines.append("")
+        lines.append(task.description)
+        if task.deliverables:
+            lines.append("")
+            lines.append("**Deliverables:**")
+            for d in task.deliverables:
+                lines.append(f"- {d}")
+        if task.dependencies:
+            lines.append(f"\n**Depends on:** {', '.join(task.dependencies)}")
+        lines.append("")
+
+    plan_md_path.write_text("\n".join(lines))
+
+
 def _format_plan_md(result: PipelineResult) -> str:
     plan = result.plan
     lines = [

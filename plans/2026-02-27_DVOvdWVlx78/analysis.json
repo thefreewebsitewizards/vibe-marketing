@@ -1,0 +1,26 @@
+{
+  "category": "ai_automation",
+  "summary": "Creator shows how to turn Claude Code into a marketing manager by using a GitHub marketing skills library with 30+ skills, then combining it with front-end design capabilities to create consistent brand kits, funnels, and landing pages without hiring overhead.",
+  "key_insights": [
+    "We could create our own 'AI Marketing Manager' positioning by showcasing how we use Claude/AI to handle multiple marketing functions (copywriting, design, automation) - eliminating the need for multiple hires",
+    "Apply this by creating a 'marketing skills repository' demonstration showing our AI handling SEO audits, CRO optimization, email sequences, and paid ads management all in one system",
+    "We could offer 'Brand Kit Creation' as a standalone service using AI to generate consistent visual identity, then apply it across all client touchpoints (websites, funnels, social media)",
+    "Apply this by positioning our service as replacing multiple marketing roles - 'Why hire a marketing manager, copywriter, AND designer when our AI system handles all three?'",
+    "We could create case studies showing before/after of businesses trying to 'do it themselves' vs. our systematic AI approach that delivers consistency they couldn't achieve manually",
+    "Apply this by developing pre-built skill sets for different local service niches (HVAC marketing skills, dental practice skills, etc.) that can be instantly deployed"
+  ],
+  "swipe_phrases": [
+    "I just turned [our AI system] into your marketing manager [ad]",
+    "You might not need a marketing hire. You need the right skills installed [website headline]",
+    "Here's how I did it and the two most important things it's doing for my business right now [email subject]",
+    "Your marketing manager is on us - no hiring, no overhead [ad]",
+    "With consistency that you did not have doing it yourself [outreach]",
+    "You now have [our AI] as your marketing professional that knows you, your brand, and your business without any of the overhead [website copy]",
+    "I'm having it design my funnels, landing pages, and social media [service description]",
+    "Over 30 marketing related skills that [our AI] can use [feature list]",
+    "Without any of the overhead [tagline]",
+    "Marketing professional that knows you, your brand, and your business [value prop]"
+  ],
+  "relevance_score": 0.9,
+  "raw_response": "```json\n{\n  \"category\": \"ai_automation\",\n  \"summary\": \"Creator shows how to turn Claude Code into a marketing manager by using a GitHub marketing skills library with 30+ skills, then combining it with front-end design capabilities to create consistent brand kits, funnels, and landing pages without hiring overhead.\",\n  \"key_insights\": [\n    \"We could create our own 'AI Marketing Manager' positioning by showcasing how we use Claude/AI to handle multiple marketing functions (copywriting, design, automation) - eliminating the need for multiple hires\",\n    \"Apply this by creating a 'marketing skills repository' demonstration showing our AI handling SEO audits, CRO optimization, email sequences, and paid ads management all in one system\",\n    \"We could offer 'Brand Kit Creation' as a standalone service using AI to generate consistent visual identity, then apply it across all client touchpoints (websites, funnels, social media)\",\n    \"Apply this by positioning our service as replacing multiple marketing roles - 'Why hire a marketing manager, copywriter, AND designer when our AI system handles all three?'\",\n    \"We could create case studies showing before/after of businesses trying to 'do it themselves' vs. our systematic AI approach that delivers consistency they couldn't achieve manually\",\n    \"Apply this by developing pre-built skill sets for different local service niches (HVAC marketing skills, dental practice skills, etc.) that can be instantly deployed\"\n  ],\n  \"swipe_phrases\": [\n    \"I just turned [our AI system] into your marketing manager [ad]\",\n    \"You might not need a marketing hire. You need the right skills installed [website headline]\", \n    \"Here's how I did it and the two most important things it's doing for my business right now [email subject]\",\n    \"Your marketing manager is on us - no hiring, no overhead [ad]\",\n    \"With consistency that you did not have doing it yourself [outreach]\",\n    \"You now have [our AI] as your marketing professional that knows you, your brand, and your business without any of the overhead [website copy]\",\n    \"I'm having it design my funnels, landing pages, and social media [service description]\",\n    \"Over 30 marketing related skills that [our AI] can use [feature list]\",\n    \"Without any of the overhead [tagline]\",\n    \"Marketing professional that knows you, your brand, and your business [value prop]\"\n  ],\n  \"relevance_score\": 0.9\n}\n```"
+}

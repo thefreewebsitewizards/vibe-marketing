@@ -1,0 +1,26 @@
+{
+  "category": "ai_automation",
+  "summary": "A Claude connector called Vibe Prospecting turns Claude chats into a lead generation system, pulling from 50+ data sources with 800M+ verified professional profiles to build targeted B2B lists instantly without needing separate CRM tools.",
+  "key_insights": [
+    "We could create our own Claude connector for local service lead generation - integrate with our existing n8n workflows to pull HVAC, plumber, roofing contractor data directly through Claude conversations",
+    "Apply the 'comment to get access' strategy on our social posts - use 'Comment LEADS' or 'Comment SETUP' to capture engagement and funnel prospects into our automated follow-up sequences",
+    "We could position our AI chatbot service as turning their website 'into a full prospecting workspace' - reframe from just lead capture to active lead generation system",
+    "Apply the instant structured output approach - show prospects exactly what they'll get (emails, phone numbers, company data) rather than vague promises about 'more leads'",
+    "We could create a local service version: 'Just type Find me 50 Dallas HVAC contractors and it returns structured lists instantly' - adapt for our target market",
+    "Use the 'verified contact info' angle heavily - emphasize our lead quality and verification process to differentiate from cheap lead lists"
+  ],
+  "swipe_phrases": [
+    "You can now use [our system] to generate leads for your business [website]",
+    "Turns your [website/chatbot] into a full prospecting workspace [ad]",
+    "Returns a structured list with emails, phone numbers and company data instantly [ad]",
+    "Verified contact info from 50+ data sources [website]",
+    "Without needing a separate CRM [ad]",
+    "Your lead generation system is on us [website]",
+    "Comment SETUP and we'll send you the link [social]",
+    "Find me 50 local contractors using AI [outreach]",
+    "Pulls data from verified professional profiles [email]",
+    "Replace 3-4 other lead tools easily [ad]"
+  ],
+  "relevance_score": 0.9,
+  "raw_response": "```json\n{\n  \"category\": \"ai_automation\",\n  \"summary\": \"A Claude connector called Vibe Prospecting turns Claude chats into a lead generation system, pulling from 50+ data sources with 800M+ verified professional profiles to build targeted B2B lists instantly without needing separate CRM tools.\",\n  \"key_insights\": [\n    \"We could create our own Claude connector for local service lead generation - integrate with our existing n8n workflows to pull HVAC, plumber, roofing contractor data directly through Claude conversations\",\n    \"Apply the 'comment to get access' strategy on our social posts - use 'Comment LEADS' or 'Comment SETUP' to capture engagement and funnel prospects into our automated follow-up sequences\",\n    \"We could position our AI chatbot service as turning their website 'into a full prospecting workspace' - reframe from just lead capture to active lead generation system\",\n    \"Apply the instant structured output approach - show prospects exactly what they'll get (emails, phone numbers, company data) rather than vague promises about 'more leads'\",\n    \"We could create a local service version: 'Just type Find me 50 Dallas HVAC contractors and it returns structured lists instantly' - adapt for our target market\",\n    \"Use the 'verified contact info' angle heavily - emphasize our lead quality and verification process to differentiate from cheap lead lists\"\n  ],\n  \"swipe_phrases\": [\n    \"You can now use [our system] to generate leads for your business [website]\",\n    \"Turns your [website/chatbot] into a full prospecting workspace [ad]\",\n    \"Returns a structured list with emails, phone numbers and company data instantly [ad]\",\n    \"Verified contact info from 50+ data sources [website]\",\n    \"Without needing a separate CRM [ad]\",\n    \"Your lead generation system is on us [website]\",\n    \"Comment SETUP and we'll send you the link [social]\",\n    \"Find me 50 local contractors using AI [outreach]\",\n    \"Pulls data from verified professional profiles [email]\",\n    \"Replace 3-4 other lead tools easily [ad]\"\n  ],\n  \"relevance_score\": 0.9\n}\n```"
+}

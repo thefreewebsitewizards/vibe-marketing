@@ -1,0 +1,26 @@
+{
+  "category": "ai_automation",
+  "summary": "Shows how to use Claude with GitHub repos to generate unlimited high-converting image ads in under 30 seconds. Demonstrates a workflow using NanoBanana prompts and Claude skills to automate ad creation at scale.",
+  "key_insights": [
+    "We could create our own GitHub repo of proven ad prompts for HVAC, plumbing, roofing services and package it as a 'lead gen toolkit' for clients",
+    "Apply this by setting up Claude with our best-performing ad copy templates to generate hundreds of variations for A/B testing client campaigns",
+    "We could position ourselves as the agency that uses 'AI ad generation systems' - making us sound more advanced than competitors doing manual ad creation",
+    "Create a 'comment to get' lead magnet strategy using GitHub repos of marketing automation prompts as the hook",
+    "We could build custom Claude skills for each service vertical (HVAC ads, dental ads, legal ads) and charge premium for 'industry-specific AI'",
+    "Apply this workflow to generate unlimited email sequences, website copy variations, and social media content for our local service clients"
+  ],
+  "swipe_phrases": [
+    "make hundreds of ads in less than 30 seconds [ad]",
+    "high converting ads just like this one [ad]",
+    "Your high-converting ad system is on us [website]",
+    "unlimited high converting ads [email]",
+    "comment below and I'll send it to you right now [social]",
+    "We'll set up your unlimited ad generation system - on us [outreach]",
+    "Generate hundreds of HVAC ads in under 30 seconds [ad]",
+    "Your automated ad creation is on us [website]",
+    "Get unlimited converting ads for your business [email]",
+    "Simple high converting ads directly from AI [ad]"
+  ],
+  "relevance_score": 0.9,
+  "raw_response": "```json\n{\n  \"category\": \"ai_automation\",\n  \"summary\": \"Shows how to use Claude with GitHub repos to generate unlimited high-converting image ads in under 30 seconds. Demonstrates a workflow using NanoBanana prompts and Claude skills to automate ad creation at scale.\",\n  \"key_insights\": [\n    \"We could create our own GitHub repo of proven ad prompts for HVAC, plumbing, roofing services and package it as a 'lead gen toolkit' for clients\",\n    \"Apply this by setting up Claude with our best-performing ad copy templates to generate hundreds of variations for A/B testing client campaigns\",\n    \"We could position ourselves as the agency that uses 'AI ad generation systems' - making us sound more advanced than competitors doing manual ad creation\",\n    \"Create a 'comment to get' lead magnet strategy using GitHub repos of marketing automation prompts as the hook\",\n    \"We could build custom Claude skills for each service vertical (HVAC ads, dental ads, legal ads) and charge premium for 'industry-specific AI'\",\n    \"Apply this workflow to generate unlimited email sequences, website copy variations, and social media content for our local service clients\"\n  ],\n  \"swipe_phrases\": [\n    \"make hundreds of ads in less than 30 seconds [ad]\",\n    \"high converting ads just like this one [ad]\", \n    \"Your high-converting ad system is on us [website]\",\n    \"unlimited high converting ads [email]\",\n    \"comment below and I'll send it to you right now [social]\",\n    \"We'll set up your unlimited ad generation system - on us [outreach]\",\n    \"Generate hundreds of HVAC ads in under 30 seconds [ad]\",\n    \"Your automated ad creation is on us [website]\",\n    \"Get unlimited converting ads for your business [email]\",\n    \"Simple high converting ads directly from AI [ad]\"\n  ],\n  \"relevance_score\": 0.9\n}\n```"
+}

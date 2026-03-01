@@ -1,0 +1,27 @@
+{
+  "category": "sales",
+  "summary": "This video demonstrates advanced objection handling for price resistance using perspective reframing and future-self visualization. The salesperson uses specific questioning techniques to move a prospect from 'I need to think about it' to closing on a $5K offer.",
+  "key_insights": [
+    "We could use the 'expensive compared to what' reframe when local businesses say our AI automation setup is too expensive - compare our $2K setup to hiring a full-time receptionist at $40K/year",
+    "Apply the 'sticker shock vs logistics' question to separate real budget concerns from price anchoring - ask 'Is this more about the number itself or do you genuinely not have the budget right now?'",
+    "We could implement future-self visualization in our sales calls - ask prospects 'What would the version of you already booking 50+ appointments per month do right now?'",
+    "Use the 'what's more expensive in the long run' framework - position doing nothing as more costly than investing in automation (losing leads daily vs one-time setup cost)",
+    "Apply the commitment escalation technique by asking prospects to rate their confidence in our system before addressing price, making the investment decision about belief rather than money",
+    "We could adapt the 'no one said it would be easy' positioning for local service businesses struggling with lead generation and appointment setting challenges"
+  ],
+  "swipe_phrases": [
+    "'It's expensive, I need to think about it' vs 'I'm booking 40+ appointments per month' [ad headline]",
+    "From the perspective of $5K [amount], is it more so sticker shock or do you logistically not have the budget? [sales script]",
+    "Do you genuinely feel confident what we do can get you to [desired outcome]? [discovery question]",
+    "What about our process specifically makes you feel confident this can actually get you where you want to go? [qualification question]",
+    "Being able to directly get help from someone who's already been where you want to be [value prop]",
+    "No one ever said those were gonna be easy either [objection handling]",
+    "What do you feel is actually more expensive in the long run? [reframe question]",
+    "What position do you feel like that's actually going to leave us in? [consequence questioning]",
+    "Never push past that [comfort zone reference]",
+    "But I'm committed [commitment statement]",
+    "Your automated lead generation system is on us, but the results? Those are all yours [website headline]"
+  ],
+  "relevance_score": 0.9,
+  "raw_response": "```json\n{\n  \"category\": \"sales\",\n  \"summary\": \"This video demonstrates advanced objection handling for price resistance using perspective reframing and future-self visualization. The salesperson uses specific questioning techniques to move a prospect from 'I need to think about it' to closing on a $5K offer.\",\n  \"key_insights\": [\n    \"We could use the 'expensive compared to what' reframe when local businesses say our AI automation setup is too expensive - compare our $2K setup to hiring a full-time receptionist at $40K/year\",\n    \"Apply the 'sticker shock vs logistics' question to separate real budget concerns from price anchoring - ask 'Is this more about the number itself or do you genuinely not have the budget right now?'\",\n    \"We could implement future-self visualization in our sales calls - ask prospects 'What would the version of you already booking 50+ appointments per month do right now?'\",\n    \"Use the 'what's more expensive in the long run' framework - position doing nothing as more costly than investing in automation (losing leads daily vs one-time setup cost)\",\n    \"Apply the commitment escalation technique by asking prospects to rate their confidence in our system before addressing price, making the investment decision about belief rather than money\",\n    \"We could adapt the 'no one said it would be easy' positioning for local service businesses struggling with lead generation and appointment setting challenges\"\n  ],\n  \"swipe_phrases\": [\n    \"'It's expensive, I need to think about it' vs 'I'm booking 40+ appointments per month' [ad headline]\",\n    \"From the perspective of $5K [amount], is it more so sticker shock or do you logistically not have the budget? [sales script]\",\n    \"Do you genuinely feel confident what we do can get you to [desired outcome]? [discovery question]\",\n    \"What about our process specifically makes you feel confident this can actually get you where you want to go? [qualification question]\",\n    \"Being able to directly get help from someone who's already been where you want to be [value prop]\",\n    \"No one ever said those were gonna be easy either [objection handling]\",\n    \"What do you feel is actually more expensive in the long run? [reframe question]\",\n    \"What position do you feel like that's actually going to leave us in? [consequence questioning]\", \n    \"Never push past that [comfort zone reference]\",\n    \"But I'm committed [commitment statement]\",\n    \"Your automated lead generation system is on us, but the results? Those are all yours [website headline]\"\n  ],\n  \"relevance_score\": 0.9\n}\n```"
+}

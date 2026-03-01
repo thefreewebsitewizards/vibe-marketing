@@ -1,0 +1,142 @@
+{
+  "updated_at": "2026-02-27T00:00:00",
+  "nodes": [
+    {
+      "id": "opening",
+      "type": "action",
+      "label": "Opening / Intro",
+      "content": "**Intro:**\n> \"Hey [Name], this is Dylan with The Free Website Wizards...\"\n\n**Purpose statement:**\n> \"The reason I'm reaching out is...\"",
+      "position": {"row": 1, "col": 3}
+    },
+    {
+      "id": "rapport",
+      "type": "action",
+      "label": "Rapport / Pattern Interrupt",
+      "content": "**Pattern interrupt:**\n> \"I'm not trying to sell you anything today...\"\n\n**Rapport builder:**\n> \"How's business been going for you?\"",
+      "position": {"row": 2, "col": 3}
+    },
+    {
+      "id": "qualification",
+      "type": "action",
+      "label": "Qualification Questions",
+      "content": "**Question 1 — Current situation:**\n> \"How are you currently getting new customers/leads?\"\n\n**Question 2 — Pain points:**\n> \"What's been your biggest challenge with marketing/lead gen?\"\n\n**Question 3 — Goals:**\n> \"If we could solve that, what would that mean for your business?\"\n\n**Question 4 — Budget/Authority:**\n> \"Are you the decision-maker when it comes to marketing?\"\n\n**Disqualification criteria:**\n> Not the decision-maker AND can't get them on a call",
+      "position": {"row": 3, "col": 3}
+    },
+    {
+      "id": "qualified_decision",
+      "type": "decision",
+      "label": "Qualified?",
+      "content": "Evaluate whether the prospect meets qualification criteria based on their answers.",
+      "position": {"row": 4, "col": 3}
+    },
+    {
+      "id": "disqualify",
+      "type": "terminal_fail",
+      "label": "Disqualify & End Call",
+      "content": "Politely end the call. Thank them for their time and leave the door open for the future.",
+      "position": {"row": 4, "col": 1}
+    },
+    {
+      "id": "pitch",
+      "type": "action",
+      "label": "Pitch / Presentation",
+      "content": "**Transition to pitch:**\n> \"Based on what you've told me, here's what I think would work best...\"\n\n**The offer:**\n> \"We build you a free website, set up an AI chatbot, and create an automated follow-up system...\"\n\n**Social proof:**\n> \"We just did this for a [trade] in [city] and they booked [X] appointments in the first month...\"\n\n**Value framing:**\n> \"The total investment to get access to the full system is...\"",
+      "position": {"row": 5, "col": 3}
+    },
+    {
+      "id": "interested_decision",
+      "type": "decision",
+      "label": "Interested?",
+      "content": "Gauge the prospect's interest level after the pitch.",
+      "position": {"row": 6, "col": 3}
+    },
+    {
+      "id": "objection_decision",
+      "type": "decision",
+      "label": "Which Objection?",
+      "content": "Identify the specific objection the prospect has raised.",
+      "position": {"row": 7, "col": 3}
+    },
+    {
+      "id": "price_objection",
+      "type": "objection",
+      "label": "Price Objection",
+      "content": "**When they say \"It's too expensive\" or \"I can't afford that\":**\n> \"I totally understand. Let me ask you this — how much is it costing you right now to NOT have a steady flow of leads?\"\n\n**Follow-up if they push back again:**\n> \"What if we could break this into a payment plan?\"",
+      "position": {"row": 8, "col": 1}
+    },
+    {
+      "id": "timing_objection",
+      "type": "objection",
+      "label": "Timing Objection",
+      "content": "**When they say \"Now's not a good time\" or \"Call me in a few months\":**\n> \"I hear you. Quick question though — when IS a good time to start getting more customers?\"\n\n**Follow-up:**\n> \"The businesses that start during slow seasons are the ones crushing it when things pick up...\"",
+      "position": {"row": 8, "col": 2}
+    },
+    {
+      "id": "think_objection",
+      "type": "objection",
+      "label": "Need to Think About It",
+      "content": "**When they say \"Let me think about it\" or \"I need to sleep on it\":**\n> \"Absolutely, I want you to feel confident. What specifically do you want to think about?\"\n\n**Isolate the real objection:**\n> \"Is it the price, the timing, or something about how the service works?\"",
+      "position": {"row": 8, "col": 4}
+    },
+    {
+      "id": "spouse_objection",
+      "type": "objection",
+      "label": "Spouse / Partner Objection",
+      "content": "**When they say \"I need to talk to my wife/husband/partner\":**\n> \"That makes total sense. Would it help if we got them on a quick call so they can hear it firsthand?\"\n\n**Alternative:**\n> \"What questions do you think they'll have? Let me give you the answers now so you can share...\"",
+      "position": {"row": 8, "col": 5}
+    },
+    {
+      "id": "closing",
+      "type": "close",
+      "label": "Closing",
+      "content": "**Trial close:**\n> \"Based on everything we talked about, does this sound like something that could work for your business?\"\n\n**Direct close:**\n> \"Awesome — let's get you started. I just need [info] to set everything up...\"\n\n**Urgency/scarcity (if applicable):**\n> \"We only take on [X] new clients per month in each market to avoid competition...\"\n\n**Booking the next step:**\n> \"Let's lock in your onboarding call — does [day] at [time] work?\"",
+      "position": {"row": 9, "col": 3}
+    },
+    {
+      "id": "closed_decision",
+      "type": "decision",
+      "label": "Closed?",
+      "content": "Did the prospect agree to move forward?",
+      "position": {"row": 10, "col": 3}
+    },
+    {
+      "id": "onboarding",
+      "type": "terminal_success",
+      "label": "Book Onboarding",
+      "content": "Confirm the onboarding call date/time. Send calendar invite and welcome materials.",
+      "position": {"row": 11, "col": 2}
+    },
+    {
+      "id": "followup",
+      "type": "terminal_fail",
+      "label": "Follow-Up Sequence",
+      "content": "**If they don't close on the call:**\n> \"I'll send you a quick recap text with the details we discussed...\"\n\n**Follow-up cadence:**\n> Day 1: Recap text with details\n> Day 3: Check-in call/text\n> Day 7: Value-add content\n> Day 14: Re-engagement\n\n**Re-engagement script:**\n> \"Hey [Name], just checking in — still interested in getting that website set up?\"",
+      "position": {"row": 11, "col": 4}
+    }
+  ],
+  "edges": [
+    {"from": "opening", "to": "rapport", "label": null},
+    {"from": "rapport", "to": "qualification", "label": null},
+    {"from": "qualification", "to": "qualified_decision", "label": null},
+    {"from": "qualified_decision", "to": "disqualify", "label": "No"},
+    {"from": "qualified_decision", "to": "pitch", "label": "Yes"},
+    {"from": "pitch", "to": "interested_decision", "label": null},
+    {"from": "interested_decision", "to": "closing", "label": "Yes"},
+    {"from": "interested_decision", "to": "objection_decision", "label": "Objection"},
+    {"from": "objection_decision", "to": "price_objection", "label": "Price"},
+    {"from": "objection_decision", "to": "timing_objection", "label": "Timing"},
+    {"from": "objection_decision", "to": "think_objection", "label": "Think"},
+    {"from": "objection_decision", "to": "spouse_objection", "label": "Spouse"},
+    {"from": "price_objection", "to": "closing", "label": "Resolved"},
+    {"from": "price_objection", "to": "followup", "label": "Unresolved"},
+    {"from": "timing_objection", "to": "closing", "label": "Resolved"},
+    {"from": "timing_objection", "to": "followup", "label": "Unresolved"},
+    {"from": "think_objection", "to": "closing", "label": "Resolved"},
+    {"from": "think_objection", "to": "followup", "label": "Unresolved"},
+    {"from": "spouse_objection", "to": "closing", "label": "Resolved"},
+    {"from": "spouse_objection", "to": "followup", "label": "Unresolved"},
+    {"from": "closing", "to": "closed_decision", "label": null},
+    {"from": "closed_decision", "to": "onboarding", "label": "Yes"},
+    {"from": "closed_decision", "to": "followup", "label": "No"}
+  ]
+}

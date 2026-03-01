@@ -1,0 +1,26 @@
+{
+  "category": "marketing",
+  "summary": "Four psychological triggers outperform discounts: identity-based copy with consistency bias, reframing bonuses as 'on us', using bandwagon over elitist positioning, and leveraging specific data points instead of generic claims.",
+  "key_insights": [
+    "We could rewrite our service descriptions using identity-based copy like 'You want your business to run while you sleep, automate it like it' to trigger consistency bias in local service owners",
+    "Apply this by changing all our 'free' language to 'on us' - 'Your website setup is on us', 'First month of automation is on us', 'Ad strategy session is on us'",
+    "We could position our AI automation as mainstream/growing instead of cutting-edge by saying 'AI automation is the fastest-growing business solution for local contractors in 2024'",
+    "Apply this by gathering specific client data and using numbers like '87% of our clients book 40% more appointments in their first 60 days' instead of generic 'our clients love us'",
+    "We could create email sequences around bandwagon positioning like 'Why every HVAC company is switching to AI appointment booking' to create FOMO",
+    "Apply this by surveying current clients for specific metrics we can promote - response times, booking increases, time saved per week"
+  ],
+  "swipe_phrases": [
+    "Your business should run while you sleep, automate it like it [ad, website headline]",
+    "Your website setup is on us [ad, email, outreach]",
+    "Your first month of automation is on us [ad, email]",
+    "Strategy session is on us [outreach, website]",
+    "AI automation is the fastest-growing business solution for local contractors in 2024 [ad, email]",
+    "Why every HVAC company is switching to AI appointment booking [email subject line]",
+    "87% of our clients book 40% more appointments in their first 60 days [website, ad copy]",
+    "93% of our contractors get their first AI-booked appointment within 14 days [website testimonial section]",
+    "Why this local plumber is breaking the internet [email subject, social post]",
+    "You feel left behind [email copy for urgency]"
+  ],
+  "relevance_score": 0.9,
+  "raw_response": "```json\n{\n  \"category\": \"marketing\",\n  \"summary\": \"Four psychological triggers outperform discounts: identity-based copy with consistency bias, reframing bonuses as 'on us', using bandwagon over elitist positioning, and leveraging specific data points instead of generic claims.\",\n  \"key_insights\": [\n    \"We could rewrite our service descriptions using identity-based copy like 'You want your business to run while you sleep, automate it like it' to trigger consistency bias in local service owners\",\n    \"Apply this by changing all our 'free' language to 'on us' - 'Your website setup is on us', 'First month of automation is on us', 'Ad strategy session is on us'\",\n    \"We could position our AI automation as mainstream/growing instead of cutting-edge by saying 'AI automation is the fastest-growing business solution for local contractors in 2024'\",\n    \"Apply this by gathering specific client data and using numbers like '87% of our clients book 40% more appointments in their first 60 days' instead of generic 'our clients love us'\",\n    \"We could create email sequences around bandwagon positioning like 'Why every HVAC company is switching to AI appointment booking' to create FOMO\",\n    \"Apply this by surveying current clients for specific metrics we can promote - response times, booking increases, time saved per week\"\n  ],\n  \"swipe_phrases\": [\n    \"Your business should run while you sleep, automate it like it [ad, website headline]\",\n    \"Your website setup is on us [ad, email, outreach]\",\n    \"Your first month of automation is on us [ad, email]\",\n    \"Strategy session is on us [outreach, website]\", \n    \"AI automation is the fastest-growing business solution for local contractors in 2024 [ad, email]\",\n    \"Why every HVAC company is switching to AI appointment booking [email subject line]\",\n    \"87% of our clients book 40% more appointments in their first 60 days [website, ad copy]\",\n    \"93% of our contractors get their first AI-booked appointment within 14 days [website testimonial section]\",\n    \"Why this local plumber is breaking the internet [email subject, social post]\",\n    \"You feel left behind [email copy for urgency]\"\n  ],\n  \"relevance_score\": 0.9\n}\n```"
+}

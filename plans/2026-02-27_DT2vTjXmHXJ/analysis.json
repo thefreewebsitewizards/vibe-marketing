@@ -1,0 +1,24 @@
+{
+  "category": "sales",
+  "summary": "Sales expert critiques common closing techniques, specifically warning against asking 'What would need to be true for you to say yes?' as it invites objections. Instead, recommends getting confirmation that your solution achieves their goals before revealing price.",
+  "key_insights": [
+    "We could eliminate 'Do you have any questions?' from our sales calls and replace with confirmation questions that maintain control of the conversation",
+    "Apply this by asking 'Based on everything we've covered, do you feel like this AI system would get you to that goal of booking 50+ leads per month?' before discussing pricing",
+    "We could restructure our sales process to get explicit agreement that our solution solves their problem before revealing investment amounts",
+    "Apply this by asking deeper 'why' questions after initial agreement: 'What do you feel would be the key benefit of having appointments booked automatically?' then 'What would that do for you personally?'",
+    "We could use the price reveal formula: 'So the total investment to get access to your AI chatbot, automated follow-up system, and lead generation setup is going to be [price]. How would you like to proceed?'",
+    "Apply this by avoiding questions that invite objections like 'How long do you need to think about it?' and instead assume the close after confirmation"
+  ],
+  "swipe_phrases": [
+    "That's amateur hour - that's you handing over the steering wheel [ad copy for competitor comparison]",
+    "You're not there to check if they're confused, you're there to lead them through uncertainty [email/website about our consultation process]",
+    "Based on everything we've covered, do you feel like this would get you to that goal of [specific result]? [sales script]",
+    "What do you feel would be the key to the castle? [sales discovery question]",
+    "So the total investment for you to actually get access to [solution] is going to be [price]. How do you like to proceed? [closing script]",
+    "Because now before you've even told them the price, they've already agreed [email about sales process]",
+    "No objection they give you can even be valid [internal sales training]",
+    "Your automated lead generation system is on us - based on what we've covered, do you feel this would get you to 100+ monthly leads? [sales pitch adaptation]"
+  ],
+  "relevance_score": 0.9,
+  "raw_response": "```json\n{\n  \"category\": \"sales\",\n  \"summary\": \"Sales expert critiques common closing techniques, specifically warning against asking 'What would need to be true for you to say yes?' as it invites objections. Instead, recommends getting confirmation that your solution achieves their goals before revealing price.\",\n  \"key_insights\": [\n    \"We could eliminate 'Do you have any questions?' from our sales calls and replace with confirmation questions that maintain control of the conversation\",\n    \"Apply this by asking 'Based on everything we've covered, do you feel like this AI system would get you to that goal of booking 50+ leads per month?' before discussing pricing\",\n    \"We could restructure our sales process to get explicit agreement that our solution solves their problem before revealing investment amounts\",\n    \"Apply this by asking deeper 'why' questions after initial agreement: 'What do you feel would be the key benefit of having appointments booked automatically?' then 'What would that do for you personally?'\",\n    \"We could use the price reveal formula: 'So the total investment to get access to your AI chatbot, automated follow-up system, and lead generation setup is going to be [price]. How would you like to proceed?'\",\n    \"Apply this by avoiding questions that invite objections like 'How long do you need to think about it?' and instead assume the close after confirmation\"\n  ],\n  \"swipe_phrases\": [\n    \"That's amateur hour - that's you handing over the steering wheel [ad copy for competitor comparison]\",\n    \"You're not there to check if they're confused, you're there to lead them through uncertainty [email/website about our consultation process]\",\n    \"Based on everything we've covered, do you feel like this would get you to that goal of [specific result]? [sales script]\",\n    \"What do you feel would be the key to the castle? [sales discovery question]\",\n    \"So the total investment for you to actually get access to [solution] is going to be [price]. How do you like to proceed? [closing script]\",\n    \"Because now before you've even told them the price, they've already agreed [email about sales process]\",\n    \"No objection they give you can even be valid [internal sales training]\",\n    \"Your automated lead generation system is on us - based on what we've covered, do you feel this would get you to 100+ monthly leads? [sales pitch adaptation]\"\n  ],\n  \"relevance_score\": 0.9\n}\n```"
+}

@@ -1,0 +1,26 @@
+{
+  "category": "sales",
+  "summary": "Teaches pattern interrupt techniques to regain control during sales calls when prospects raise objections or try to steer the conversation off track. Emphasizes being direct and challenging prospects' statements rather than being passive.",
+  "key_insights": [
+    "We could implement pattern interrupts in our appointment setting calls when prospects ask about price upfront - challenge them with 'So you're saying you don't care what AI automation we build, you just want to know if the price fits your budget?'",
+    "Apply this by training our sales team to immediately redirect when prospects say 'I just want to know the cost' - use the exact framework: 'I knew I liked you - straight to the point. But you do want to make sure this AI chatbot is actually right for your HVAC business first, right?'",
+    "We could create our own pattern interrupt scripts for common local service business objections like 'I need to think about it' or 'I have to talk to my partner' - make them feel slightly silly for the objection",
+    "Apply this by controlling the conversation flow like 'a dog on a leash' - prospects will go all over the place if we let them, so we need to guide them back to the appointment booking process",
+    "We could use playful confrontation when prospects try to skip our discovery process - 'Hold on, so you're telling me you want us to build your website without knowing what your plumbing business actually needs?'",
+    "Apply this by being less passive when prospects raise objections - instead of 'no problem, we can discuss that,' use 'Actually, that's interesting you say that because...' and redirect"
+  ],
+  "swipe_phrases": [
+    "I don't want to waste anyone's time here [outreach]",
+    "Dude, I knew I liked you - straight to the point [sales call]",
+    "So you're saying you don't care what it is, you just want to make sure the price aligns with your budget? [sales objection handling]",
+    "I thought we were about to do a deal [sales call closing]",
+    "That's a very intelligent move [sales call validation]",
+    "Your AI chatbot setup is on us - but you do want to make sure it's actually right for your business first, right? [adapted for our business]",
+    "Stop trying to be passive when prospects object [internal training]",
+    "The ability to pattern interrupt right away to get back on track [sales framework]",
+    "You've got to learn how to control the conversation [sales training]",
+    "Without being too passive, where they just walk all over you [sales mindset]"
+  ],
+  "relevance_score": 0.9,
+  "raw_response": "{\n  \"category\": \"sales\",\n  \"summary\": \"Teaches pattern interrupt techniques to regain control during sales calls when prospects raise objections or try to steer the conversation off track. Emphasizes being direct and challenging prospects' statements rather than being passive.\",\n  \"key_insights\": [\n    \"We could implement pattern interrupts in our appointment setting calls when prospects ask about price upfront - challenge them with 'So you're saying you don't care what AI automation we build, you just want to know if the price fits your budget?'\",\n    \"Apply this by training our sales team to immediately redirect when prospects say 'I just want to know the cost' - use the exact framework: 'I knew I liked you - straight to the point. But you do want to make sure this AI chatbot is actually right for your HVAC business first, right?'\",\n    \"We could create our own pattern interrupt scripts for common local service business objections like 'I need to think about it' or 'I have to talk to my partner' - make them feel slightly silly for the objection\",\n    \"Apply this by controlling the conversation flow like 'a dog on a leash' - prospects will go all over the place if we let them, so we need to guide them back to the appointment booking process\",\n    \"We could use playful confrontation when prospects try to skip our discovery process - 'Hold on, so you're telling me you want us to build your website without knowing what your plumbing business actually needs?'\",\n    \"Apply this by being less passive when prospects raise objections - instead of 'no problem, we can discuss that,' use 'Actually, that's interesting you say that because...' and redirect\"\n  ],\n  \"swipe_phrases\": [\n    \"I don't want to waste anyone's time here [outreach]\",\n    \"Dude, I knew I liked you - straight to the point [sales call]\", \n    \"So you're saying you don't care what it is, you just want to make sure the price aligns with your budget? [sales objection handling]\",\n    \"I thought we were about to do a deal [sales call closing]\",\n    \"That's a very intelligent move [sales call validation]\",\n    \"Your AI chatbot setup is on us - but you do want to make sure it's actually right for your business first, right? [adapted for our business]\",\n    \"Stop trying to be passive when prospects object [internal training]\",\n    \"The ability to pattern interrupt right away to get back on track [sales framework]\",\n    \"You've got to learn how to control the conversation [sales training]\",\n    \"Without being too passive, where they just walk all over you [sales mindset]\"\n  ],\n  \"relevance_score\": 0.9\n}"
+}

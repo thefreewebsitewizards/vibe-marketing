@@ -10,6 +10,7 @@ from src.services.analyzer import analyze_reel
 from src.services.planner import generate_plan
 from src.utils.file_ops import create_temp_dir, cleanup_temp_dir
 from src.utils.plan_writer import write_plan
+from src.utils.plan_manager import is_duplicate
 
 router = APIRouter()
 
@@ -20,6 +21,13 @@ def process_reel(request: ReelRequest) -> dict:
     reel_id = ""
     try:
         reel_id = extract_shortcode(request.reel_url)
+
+        if is_duplicate(reel_id):
+            raise HTTPException(
+                status_code=409,
+                detail=f"Reel {reel_id} has already been processed. Check /plans/{reel_id} for its status.",
+            )
+
         logger.info(f"Processing reel: {reel_id}")
 
         # Setup

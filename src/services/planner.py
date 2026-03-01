@@ -5,13 +5,27 @@ from loguru import logger
 from src.config import settings
 from src.models import AnalysisResult, ReelMetadata, ImplementationPlan, PlanTask
 from src.prompts.generate_plan import build_plan_prompt
+from src.utils.plan_manager import get_past_plan_summaries
 
 
 def generate_plan(analysis: AnalysisResult, metadata: ReelMetadata) -> ImplementationPlan:
     """Generate an implementation plan from the analysis using Claude."""
     client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
 
-    system_prompt, user_prompt = build_plan_prompt(analysis, metadata)
+    existing_plans = get_past_plan_summaries(limit=10)
+
+    script_context = ""
+    script_section_ids = ""
+    if analysis.category == "sales":
+        from src.utils.script_manager import get_script_content, get_script_summary
+        script_context = get_script_content()
+        if script_context:
+            script_section_ids = get_script_summary()
+            logger.info("Injecting sales script context into plan prompt")
+
+    system_prompt, user_prompt = build_plan_prompt(
+        analysis, metadata, existing_plans, script_context, script_section_ids
+    )
 
     logger.info("Generating implementation plan...")
     response = client.messages.create(

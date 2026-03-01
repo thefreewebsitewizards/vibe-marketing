@@ -1,0 +1,26 @@
+{
+  "category": "sales",
+  "summary": "The perfect salesman says almost nothing and only asks questions because prospects believe what they say far more than what you tell them. Use a framework to clarify problems, explore past pain/experiences, then present your solution.",
+  "key_insights": [
+    "We could restructure our discovery calls to be 80% questions and 20% presenting - let prospects sell themselves on why they need AI automation",
+    "Apply this by creating a question bank that gets local service businesses to articulate their lead generation pain points instead of us explaining the problems",
+    "We could use the 'deprivation = motivation' principle by having prospects detail all their failed attempts at getting consistent leads before presenting our solution",
+    "Apply this by training our sales team to ask 'What have you tried so far to get more customers?' to amplify their frustration with current methods",
+    "We could create email sequences that pose questions rather than make claims - 'What's costing you more: missing calls or paying for leads that don't convert?'",
+    "Apply this by reframing our website copy from 'We provide AI chatbots' to 'What if you never missed another potential customer again?'"
+  ],
+  "swipe_phrases": [
+    "The perfect [service provider] says nothing and only asks questions [website headline]",
+    "There's nothing to disagree with [objection handling]",
+    "They're going to believe way more of what they say than what you say [sales training]",
+    "What have you done so far to try and solve this? [discovery call script]",
+    "Motivation is the equal opposite of deprivation [sales psychology]",
+    "The more deprived someone is of something, the more motivated they are to solve it [email copy]",
+    "You want them to say it, not you [ad copy]",
+    "What's the biggest challenge you're trying to fix with your current lead generation? [outreach]",
+    "So you clarify whether they're there [qualification framework]",
+    "The more frustrated you are with missed opportunities, the more ready you are for automation [email]"
+  ],
+  "relevance_score": 0.9,
+  "raw_response": "```json\n{\n  \"category\": \"sales\",\n  \"summary\": \"The perfect salesman says almost nothing and only asks questions because prospects believe what they say far more than what you tell them. Use a framework to clarify problems, explore past pain/experiences, then present your solution.\",\n  \"key_insights\": [\n    \"We could restructure our discovery calls to be 80% questions and 20% presenting - let prospects sell themselves on why they need AI automation\",\n    \"Apply this by creating a question bank that gets local service businesses to articulate their lead generation pain points instead of us explaining the problems\",\n    \"We could use the 'deprivation = motivation' principle by having prospects detail all their failed attempts at getting consistent leads before presenting our solution\",\n    \"Apply this by training our sales team to ask 'What have you tried so far to get more customers?' to amplify their frustration with current methods\",\n    \"We could create email sequences that pose questions rather than make claims - 'What's costing you more: missing calls or paying for leads that don't convert?'\",\n    \"Apply this by reframing our website copy from 'We provide AI chatbots' to 'What if you never missed another potential customer again?'\"\n  ],\n  \"swipe_phrases\": [\n    \"The perfect [service provider] says nothing and only asks questions [website headline]\",\n    \"There's nothing to disagree with [objection handling]\",\n    \"They're going to believe way more of what they say than what you say [sales training]\",\n    \"What have you done so far to try and solve this? [discovery call script]\",\n    \"Motivation is the equal opposite of deprivation [sales psychology]\",\n    \"The more deprived someone is of something, the more motivated they are to solve it [email copy]\",\n    \"You want them to say it, not you [ad copy]\",\n    \"What's the biggest challenge you're trying to fix with your current lead generation? [outreach]\",\n    \"So you clarify whether they're there [qualification framework]\",\n    \"The more frustrated you are with missed opportunities, the more ready you are for automation [email]\"\n  ],\n  \"relevance_score\": 0.9\n}\n```"
+}

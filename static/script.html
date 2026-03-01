@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sales Script — The Free Website Wizards</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #f5f5f7;
+    color: #1d1d1f;
+    min-height: 100vh;
+    overflow-x: auto;
+  }
+
+  header {
+    background: #fff;
+    border-bottom: 1px solid #e0e0e0;
+    padding: 16px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  header h1 { font-size: 18px; font-weight: 600; }
+  header .subtitle { font-size: 13px; color: #86868b; margin-left: 12px; }
+
+  #toast {
+    position: fixed; top: 20px; right: 20px; z-index: 200;
+    padding: 12px 20px; border-radius: 8px; font-size: 14px;
+    color: #fff; opacity: 0; transition: opacity 0.3s;
+    pointer-events: none;
+  }
+  #toast.show { opacity: 1; }
+  #toast.success { background: #34c759; }
+  #toast.error { background: #ff3b30; }
+
+  #canvas {
+    position: relative;
+    padding: 40px;
+    min-height: calc(100vh - 60px);
+  }
+
+  #grid {
+    display: grid;
+    grid-template-columns: repeat(5, 220px);
+    grid-auto-rows: minmax(120px, auto);
+    gap: 24px 32px;
+    position: relative;
+    z-index: 2;
+  }
+
+  .node {
+    background: #fff;
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    border: 1.5px solid #e0e0e0;
+    cursor: pointer;
+    transition: box-shadow 0.15s, border-color 0.15s;
+    display: flex;
+    flex-direction: column;
+    min-height: 80px;
+  }
+  .node:hover {
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+    border-color: #b0b0b0;
+  }
+  .node.editing {
+    border-color: #007aff;
+    box-shadow: 0 0 0 3px rgba(0,122,255,0.15);
+  }
+
+  .node-label {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .node-label .icon { font-size: 14px; }
+
+  .node-content {
+    font-size: 12px;
+    line-height: 1.5;
+    color: #3a3a3c;
+    flex: 1;
+    overflow: hidden;
+  }
+  .node-content blockquote {
+    border-left: 2px solid #c7c7cc;
+    padding-left: 8px;
+    margin: 4px 0;
+    color: #636366;
+    font-style: italic;
+  }
+  .node-content strong { font-weight: 600; }
+
+  /* Node type styles */
+  .node.type-decision {
+    background: #f2f2f7;
+    border-style: dashed;
+  }
+  .node.type-objection {
+    border-left: 4px solid #ff9500;
+  }
+  .node.type-close {
+    border-left: 4px solid #007aff;
+  }
+  .node.type-terminal_success {
+    background: #eafbe7;
+    border-color: #34c759;
+  }
+  .node.type-terminal_fail {
+    background: #fff5f5;
+    border-color: #ff3b30;
+  }
+
+  /* Edit mode */
+  .edit-area {
+    display: none;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1;
+  }
+  .node.editing .node-content { display: none; }
+  .node.editing .edit-area { display: flex; }
+
+  .edit-area textarea {
+    font-family: inherit;
+    font-size: 12px;
+    line-height: 1.5;
+    border: 1px solid #d1d1d6;
+    border-radius: 6px;
+    padding: 8px;
+    resize: vertical;
+    min-height: 100px;
+    width: 100%;
+  }
+  .edit-area textarea:focus { outline: none; border-color: #007aff; }
+
+  .edit-buttons {
+    display: flex;
+    gap: 6px;
+    justify-content: flex-end;
+  }
+  .edit-buttons button {
+    font-size: 12px;
+    padding: 4px 12px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-weight: 500;
+  }
+  .btn-save { background: #007aff; color: #fff; }
+  .btn-save:hover { background: #0062cc; }
+  .btn-cancel { background: #e5e5ea; color: #1d1d1f; }
+  .btn-cancel:hover { background: #d1d1d6; }
+
+  /* SVG arrow overlay */
+  #arrows {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 1;
+    pointer-events: none;
+  }
+  #arrows path {
+    fill: none;
+    stroke: #b0b0b0;
+    stroke-width: 1.5;
+  }
+  #arrows .arrowhead { fill: #b0b0b0; }
+  #arrows text {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 11px;
+    fill: #86868b;
+  }
+</style>
+</head>
+<body>
+<header>
+  <div style="display:flex;align-items:baseline;">
+    <h1>Sales Script</h1>
+    <span class="subtitle">The Free Website Wizards — click a node to edit</span>
+  </div>
+</header>
+
+<div id="toast"></div>
+
+<div id="canvas">
+  <svg id="arrows"></svg>
+  <div id="grid"></div>
+</div>
+
+<script>
+const API = '/api/script';
+let scriptData = null;
+let activeNode = null;
+
+const TYPE_ICONS = {
+  action: '',
+  decision: '\u25C7',
+  objection: '\u26A0',
+  close: '\u2605',
+  terminal_success: '\u2713',
+  terminal_fail: '\u2717',
+};
+
+function renderMarkdown(text) {
+  return text
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>')
+    .replace(/\n/g, '<br>');
+}
+
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'show ' + type;
+  setTimeout(() => t.className = '', 2500);
+}
+
+function buildNode(node) {
+  const el = document.createElement('div');
+  el.className = 'node type-' + node.type;
+  el.dataset.id = node.id;
+  el.style.gridRow = node.position.row;
+  el.style.gridColumn = node.position.col;
+
+  const icon = TYPE_ICONS[node.type] || '';
+  el.innerHTML =
+    '<div class="node-label">' +
+      (icon ? '<span class="icon">' + icon + '</span>' : '') +
+      '<span>' + node.label + '</span>' +
+    '</div>' +
+    '<div class="node-content">' + renderMarkdown(node.content) + '</div>' +
+    '<div class="edit-area">' +
+      '<textarea></textarea>' +
+      '<div class="edit-buttons">' +
+        '<button class="btn-cancel" onclick="cancelEdit(event)">Cancel</button>' +
+        '<button class="btn-save" onclick="saveEdit(event)">Save</button>' +
+      '</div>' +
+    '</div>';
+
+  el.addEventListener('click', (e) => {
+    if (e.target.closest('.edit-buttons')) return;
+    if (!el.classList.contains('editing')) startEdit(el, node);
+  });
+
+  return el;
+}
+
+function startEdit(el, node) {
+  if (activeNode && activeNode !== el) cancelEditEl(activeNode);
+  activeNode = el;
+  el.classList.add('editing');
+  const ta = el.querySelector('textarea');
+  ta.value = node.content;
+  ta.focus();
+}
+
+function cancelEdit(e) {
+  e.stopPropagation();
+  const el = e.target.closest('.node');
+  cancelEditEl(el);
+}
+
+function cancelEditEl(el) {
+  el.classList.remove('editing');
+  if (activeNode === el) activeNode = null;
+}
+
+async function saveEdit(e) {
+  e.stopPropagation();
+  const el = e.target.closest('.node');
+  const id = el.dataset.id;
+  const content = el.querySelector('textarea').value;
+
+  try {
+    const res = await fetch(API + '/sections/' + id, {
+      method: 'PUT',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({content}),
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const updated = await res.json();
+
+    // Update local data
+    const node = scriptData.nodes.find(n => n.id === id);
+    if (node) node.content = updated.content;
+
+    el.querySelector('.node-content').innerHTML = renderMarkdown(updated.content);
+    cancelEditEl(el);
+    showToast('Saved!', 'success');
+  } catch (err) {
+    showToast('Save failed: ' + err.message, 'error');
+  }
+}
+
+function drawArrows() {
+  const svg = document.getElementById('arrows');
+  const canvas = document.getElementById('canvas');
+  const canvasRect = canvas.getBoundingClientRect();
+
+  let html = '<defs><marker id="ah" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">' +
+    '<path d="M0,0 L8,3 L0,6 Z" class="arrowhead"/></marker></defs>';
+
+  for (const edge of scriptData.edges) {
+    const fromEl = document.querySelector('[data-id="' + edge.from + '"]');
+    const toEl = document.querySelector('[data-id="' + edge.to + '"]');
+    if (!fromEl || !toEl) continue;
+
+    const fromRect = fromEl.getBoundingClientRect();
+    const toRect = toEl.getBoundingClientRect();
+
+    // Calculate center points relative to canvas
+    const fx = fromRect.left + fromRect.width / 2 - canvasRect.left;
+    const fy = fromRect.top + fromRect.height - canvasRect.top;
+    const tx = toRect.left + toRect.width / 2 - canvasRect.left;
+    const ty = toRect.top - canvasRect.top;
+
+    // Use bottom of source, top of target; handle same-row with side connections
+    let sx, sy, ex, ey;
+    const sameRow = Math.abs(fromRect.top - toRect.top) < 40;
+
+    if (sameRow) {
+      // Side connection
+      if (toRect.left < fromRect.left) {
+        sx = fromRect.left - canvasRect.left;
+        sy = fromRect.top + fromRect.height / 2 - canvasRect.top;
+        ex = toRect.left + toRect.width - canvasRect.left;
+        ey = toRect.top + toRect.height / 2 - canvasRect.top;
+      } else {
+        sx = fromRect.left + fromRect.width - canvasRect.left;
+        sy = fromRect.top + fromRect.height / 2 - canvasRect.top;
+        ex = toRect.left - canvasRect.left;
+        ey = toRect.top + toRect.height / 2 - canvasRect.top;
+      }
+      const mx = (sx + ex) / 2;
+      html += '<path d="M' + sx + ',' + sy + ' C' + mx + ',' + sy + ' ' + mx + ',' + ey + ' ' + ex + ',' + ey + '" marker-end="url(#ah)"/>';
+      if (edge.label) {
+        html += '<text x="' + mx + '" y="' + ((sy + ey) / 2 - 6) + '" text-anchor="middle">' + edge.label + '</text>';
+      }
+    } else {
+      // Vertical connection
+      sx = fx; sy = fy;
+      ex = tx; ey = ty;
+      const midY = (sy + ey) / 2;
+      html += '<path d="M' + sx + ',' + sy + ' C' + sx + ',' + midY + ' ' + ex + ',' + midY + ' ' + ex + ',' + ey + '" marker-end="url(#ah)"/>';
+      if (edge.label) {
+        const labelX = (sx + ex) / 2;
+        html += '<text x="' + (labelX + 8) + '" y="' + (midY - 4) + '" text-anchor="start">' + edge.label + '</text>';
+      }
+    }
+  }
+
+  svg.innerHTML = html;
+  // Size SVG to match canvas
+  svg.setAttribute('width', canvas.scrollWidth);
+  svg.setAttribute('height', canvas.scrollHeight);
+}
+
+async function init() {
+  try {
+    const res = await fetch(API);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    scriptData = await res.json();
+  } catch (err) {
+    showToast('Failed to load script: ' + err.message, 'error');
+    return;
+  }
+
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  for (const node of scriptData.nodes) {
+    grid.appendChild(buildNode(node));
+  }
+
+  // Draw arrows after layout settles
+  requestAnimationFrame(() => requestAnimationFrame(drawArrows));
+  window.addEventListener('resize', drawArrows);
+}
+
+init();
+</script>
+</body>
+</html>

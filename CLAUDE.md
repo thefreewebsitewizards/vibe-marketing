@@ -42,6 +42,7 @@ For each approved plan:
 ### Execution Rules
 - **CAN DO:** Write code, create n8n workflow JSONs, draft content, create scripts, update configs
 - **CAN DO:** Create GHL automation configs, draft email/SMS sequences, generate ad copy
+- **CAN DO:** Modify sales script sections via PUT /api/script/sections/{id} when a plan calls for script updates
 - **ASK FIRST:** Anything that costs money (running ads, buying domains), sending messages to real people
 - **NEVER:** Delete production data, modify .env secrets, push to main without review
 - **NEVER:** Execute a plan that is still in `"review"` status
@@ -52,10 +53,11 @@ For each approved plan:
 src/main.py          — FastAPI app entry point
 src/config.py        — Pydantic Settings (loads .env)
 src/models.py        — All data models
-src/routers/         — API endpoints (reel.py, health.py)
+src/routers/         — API endpoints (reel.py, health.py, script.py)
 src/services/        — Pipeline stages (downloader, audio, transcriber, analyzer, planner)
 src/prompts/         — Claude prompt templates
 src/utils/           — Plan writing, file operations
+assets/              — Editable assets (sales script, etc.)
 plans/               — Generated plans and knowledge base
 scripts/             — CLI tools and setup
 n8n/                 — Workflow export JSONs
@@ -87,3 +89,5 @@ curl http://localhost:8000/health
 - `plans/_index.json` — Plan registry with status tracking
 - `src/prompts/analyze_reel.py` — Analysis prompt (tune for better insights)
 - `src/prompts/generate_plan.py` — Plan generation prompt (tune for better tasks)
+- `assets/sales_script.json` — Dylan's sales call script as flowchart data (nodes + edges, editable via /script UI or API)
+- `static/script.html` — Flowchart editor web page (served at /script)

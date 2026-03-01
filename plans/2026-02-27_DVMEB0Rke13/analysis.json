@@ -1,0 +1,26 @@
+{
+  "category": "business_ops",
+  "summary": "Creator ranks essential software tools for running a $100k/month coaching program using an S-D tier system. Shows specific tools for each business function from lead capture to operations management.",
+  "key_insights": [
+    "We could create tier-list content ranking marketing automation tools for local service businesses - generates engagement while positioning us as experts",
+    "Apply this by building our own 'S-tier stack' around GoHighLevel as the central hub, then show prospects how we implement the complete system for them",
+    "We could use the tier-list format to audit prospects' current tool stacks and show them gaps/inefficiencies in sales calls",
+    "Apply the 'hub and spoke' model - position GHL as the central operations hub that connects all other tools, simplifying the tech stack for local businesses",
+    "We could create content showing before/after of chaotic multi-tool setups vs our streamlined GHL-centered approach",
+    "Apply this by offering 'tech stack audits' as lead magnets - analyze their current tools and show optimization opportunities"
+  ],
+  "swipe_phrases": [
+    "This is the hub for your operation [website headline]",
+    "You can literally cook up fire funnels that look like you paid $50,000 to build [ad copy]",
+    "Your sales goals all get booked here [landing page]",
+    "The glue of your operation [automation service description]",
+    "Everything runs automatically [email subject]",
+    "Managing every lead like they're the CIA [outreach - tracking capabilities]",
+    "It sounds like a warzone in there [social content about busy sales teams]",
+    "All the killer copy gets written here [copywriting service]",
+    "Nice, pretty overviews of all your data [reporting feature]",
+    "Your complete operations stack is on us [adapted for our brand voice - website]"
+  ],
+  "relevance_score": 0.85,
+  "raw_response": "```json\n{\n  \"category\": \"business_ops\",\n  \"summary\": \"Creator ranks essential software tools for running a $100k/month coaching program using an S-D tier system. Shows specific tools for each business function from lead capture to operations management.\",\n  \"key_insights\": [\n    \"We could create tier-list content ranking marketing automation tools for local service businesses - generates engagement while positioning us as experts\",\n    \"Apply this by building our own 'S-tier stack' around GoHighLevel as the central hub, then show prospects how we implement the complete system for them\",\n    \"We could use the tier-list format to audit prospects' current tool stacks and show them gaps/inefficiencies in sales calls\",\n    \"Apply the 'hub and spoke' model - position GHL as the central operations hub that connects all other tools, simplifying the tech stack for local businesses\",\n    \"We could create content showing before/after of chaotic multi-tool setups vs our streamlined GHL-centered approach\",\n    \"Apply this by offering 'tech stack audits' as lead magnets - analyze their current tools and show optimization opportunities\"\n  ],\n  \"swipe_phrases\": [\n    \"This is the hub for your operation [website headline]\",\n    \"You can literally cook up fire funnels that look like you paid $50,000 to build [ad copy]\",\n    \"Your sales goals all get booked here [landing page]\", \n    \"The glue of your operation [automation service description]\",\n    \"Everything runs automatically [email subject]\",\n    \"Managing every lead like they're the CIA [outreach - tracking capabilities]\",\n    \"It sounds like a warzone in there [social content about busy sales teams]\",\n    \"All the killer copy gets written here [copywriting service]\",\n    \"Nice, pretty overviews of all your data [reporting feature]\",\n    \"Your complete operations stack is on us [adapted for our brand voice - website]\"\n  ],\n  \"relevance_score\": 0.85\n}\n```"
+}
