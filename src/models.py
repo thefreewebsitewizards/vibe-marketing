@@ -156,3 +156,5 @@ class PlanIndexEntry(BaseModel):
     relevance_score: float = 0.0
     estimated_cost: float = 0.0
     routed_to: str = ""
+    task_count: int = 0
+    total_hours: float = 0.0

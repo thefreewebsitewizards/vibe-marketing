@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from src.routers import health, reel, plans, script, dashboard
+from src.routers import health, reel, plans, script, dashboard, api_config
 from src.services.telegram_bot import start_bot, stop_bot
 
 
@@ -35,6 +35,7 @@ app.include_router(reel.router)
 app.include_router(plans.router)
 app.include_router(script.router)
 app.include_router(dashboard.router)
+app.include_router(api_config.router)
 
 # Mount static files (CSS, JS, images)
 static_dir = Path(__file__).resolve().parent.parent / "static"

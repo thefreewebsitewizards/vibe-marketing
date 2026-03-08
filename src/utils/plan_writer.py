@@ -588,6 +588,8 @@ def _update_index(result: PipelineResult, plan_dir_name: str, *, routed_to: str 
         relevance_score=result.analysis.relevance_score,
         estimated_cost=result.cost_breakdown.total_cost_usd if result.cost_breakdown else 0.0,
         routed_to=routed_to,
+        task_count=len(result.plan.tasks),
+        total_hours=result.plan.total_estimated_hours,
     )
     index["plans"].append(entry.model_dump())
 

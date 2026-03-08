@@ -5,143 +5,688 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Vibe Marketing — Dashboard</title>
 <style>
+  :root {
+    --bg-base: #0f172a;
+    --bg-card: #1e293b;
+    --bg-hover: #263347;
+    --bg-input: #1e293b;
+    --border: #334155;
+    --text: #e2e8f0;
+    --text-bright: #f8fafc;
+    --text-dim: #94a3b8;
+    --text-muted: #64748b;
+    --accent: #60a5fa;
+    --review: #f59e0b;
+    --approved: #22c55e;
+    --in-progress: #3b82f6;
+    --completed: #6b7280;
+    --failed: #ef4444;
+    --cost: #7c3aed;
+    --route: #0891b2;
+  }
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    background: #0f172a; color: #e2e8f0;
-    line-height: 1.6; padding: 16px;
-    max-width: 960px; margin: 0 auto;
+    background: var(--bg-base); color: var(--text);
+    line-height: 1.6; padding: 0; min-height: 100vh;
   }
-  a { color: #60a5fa; text-decoration: none; }
+  a { color: var(--accent); text-decoration: none; }
   a:hover { text-decoration: underline; }
-  h1 { font-size: 1.5rem; color: #f8fafc; }
-  h2 { font-size: 1.15rem; color: #f8fafc; margin-bottom: 8px; }
 
+  /* Layout */
+  .shell { max-width: 1080px; margin: 0 auto; padding: 16px; }
+
+  /* Header */
   .header {
     display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: 20px; flex-wrap: wrap; gap: 12px;
+    margin-bottom: 0; padding: 12px 0; flex-wrap: wrap; gap: 12px;
   }
-  .header-left { display: flex; align-items: center; gap: 12px; }
-  .header-right { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .header h1 { font-size: 1.4rem; color: var(--text-bright); }
 
-  .search-input {
-    background: #1e293b; border: 1px solid #334155; border-radius: 6px;
-    color: #e2e8f0; padding: 6px 12px; font-size: 0.85rem; width: 200px;
+  /* Tabs */
+  .tab-bar {
+    display: flex; gap: 0; border-bottom: 1px solid var(--border);
+    margin-bottom: 20px; overflow-x: auto;
   }
-  .search-input::placeholder { color: #64748b; }
+  .tab-btn {
+    background: none; border: none; color: var(--text-muted);
+    padding: 10px 20px; font-size: 0.9rem; cursor: pointer;
+    border-bottom: 2px solid transparent; white-space: nowrap;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .tab-btn:hover { color: var(--text); }
+  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
 
-  .filter-select {
-    background: #1e293b; border: 1px solid #334155; border-radius: 6px;
-    color: #e2e8f0; padding: 6px 10px; font-size: 0.85rem;
+  /* Stats grid */
+  .stats-grid {
+    display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 24px;
+  }
+  .stat-card {
+    background: var(--bg-card); border-radius: 8px; padding: 14px 16px;
+    text-align: center; border-top: 3px solid var(--border);
+  }
+  .stat-card[data-color="review"] { border-top-color: var(--review); }
+  .stat-card[data-color="approved"] { border-top-color: var(--approved); }
+  .stat-card[data-color="completed"] { border-top-color: var(--completed); }
+  .stat-card[data-color="cost"] { border-top-color: var(--cost); }
+  .stat-card[data-color="total"] { border-top-color: var(--accent); }
+  .stat-value { font-size: 1.5rem; font-weight: 700; color: var(--text-bright); }
+  .stat-label { font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+
+  /* Cards */
+  .card {
+    background: var(--bg-card); border-radius: 8px; padding: 16px; margin-bottom: 12px;
   }
 
-  .stats {
-    display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap;
+  /* Activity feed */
+  .activity-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 0; border-bottom: 1px solid var(--border);
   }
-  .stat {
-    background: #1e293b; border-radius: 6px; padding: 10px 16px;
-    flex: 1; min-width: 100px; text-align: center;
-  }
-  .stat-value { font-size: 1.3rem; font-weight: 700; color: #f8fafc; }
-  .stat-label { font-size: 0.75rem; color: #64748b; text-transform: uppercase; }
+  .activity-item:last-child { border-bottom: none; }
+  .activity-title { flex: 1; font-size: 0.88rem; color: var(--text-bright); }
+  .activity-title a { color: var(--text-bright); }
+  .activity-title a:hover { color: var(--accent); text-decoration: none; }
+  .activity-date { font-size: 0.75rem; color: var(--text-muted); white-space: nowrap; }
 
-  .category-section { margin-bottom: 20px; }
-  .category-header {
-    display: flex; align-items: center; gap: 8px;
-    cursor: pointer; user-select: none; padding: 8px 0;
-    border-bottom: 1px solid #1e293b;
-  }
-  .category-header:hover { color: #f8fafc; }
-  .category-toggle { color: #64748b; font-size: 0.85rem; }
-  .category-badge {
-    background: #334155; color: #94a3b8; padding: 2px 8px;
-    border-radius: 10px; font-size: 0.75rem; font-weight: 600;
-  }
-  .category-plans { margin-top: 8px; }
-  .category-plans.collapsed { display: none; }
-
-  .plan-card {
-    display: block; background: #1e293b; border-radius: 6px;
-    padding: 12px 16px; margin-bottom: 8px;
-    transition: background 0.15s; cursor: pointer; text-decoration: none; color: inherit;
-  }
-  .plan-card:hover { background: #263347; text-decoration: none; }
-  .plan-card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
-  .plan-title { font-weight: 600; color: #f1f5f9; font-size: 0.95rem; }
-  .plan-theme { color: #94a3b8; font-size: 0.8rem; font-style: italic; margin-top: 2px; }
-  .plan-meta { display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap; align-items: center; }
-
+  /* Badges */
   .badge {
     display: inline-block; padding: 2px 8px; border-radius: 4px;
-    font-size: 0.7rem; font-weight: 600; color: #fff;
+    font-size: 0.7rem; font-weight: 600; color: #fff; white-space: nowrap;
   }
-  .badge-review { background: #f59e0b; }
-  .badge-approved { background: #22c55e; }
-  .badge-in_progress { background: #3b82f6; }
-  .badge-completed { background: #6b7280; }
-  .badge-failed { background: #ef4444; }
-  .badge-relevance { border: 1px solid #334155; background: transparent; }
-  .badge-cost { background: #7c3aed; }
-  .badge-route { background: #0891b2; }
+  .badge-review { background: var(--review); }
+  .badge-approved { background: var(--approved); }
+  .badge-in_progress { background: var(--in-progress); }
+  .badge-completed { background: var(--completed); }
+  .badge-failed { background: var(--failed); }
+  .badge-cost { background: var(--cost); }
+  .badge-route { background: var(--route); }
+  .badge-relevance { border: 1px solid var(--border); background: transparent; }
 
-  .plan-date { color: #64748b; font-size: 0.75rem; }
-  .empty-state { color: #64748b; text-align: center; padding: 40px; }
+  /* Quick actions */
+  .quick-actions { display: flex; gap: 10px; margin-bottom: 24px; flex-wrap: wrap; }
+  .url-input {
+    flex: 1; min-width: 250px; background: var(--bg-input); border: 1px solid var(--border);
+    border-radius: 6px; color: var(--text); padding: 8px 14px; font-size: 0.88rem;
+  }
+  .url-input::placeholder { color: var(--text-muted); }
+  .btn {
+    background: var(--accent); color: #fff; border: none; border-radius: 6px;
+    padding: 8px 18px; font-size: 0.88rem; font-weight: 600; cursor: pointer;
+    transition: opacity 0.15s; white-space: nowrap;
+  }
+  .btn:hover { opacity: 0.85; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-green { background: var(--approved); }
+  .btn-sm { padding: 4px 10px; font-size: 0.75rem; }
 
-  @media (max-width: 600px) {
-    body { padding: 12px; }
-    .header { flex-direction: column; align-items: flex-start; }
-    .search-input { width: 100%; }
-    .stat { min-width: 80px; }
+  /* Category chart */
+  .chart-bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+  .chart-label { width: 110px; font-size: 0.8rem; color: var(--text-dim); text-align: right; }
+  .chart-track { flex: 1; height: 22px; background: var(--border); border-radius: 4px; overflow: hidden; }
+  .chart-fill { height: 100%; border-radius: 4px; display: flex; align-items: center; padding-left: 8px; font-size: 0.72rem; font-weight: 600; color: #fff; min-width: 24px; }
+
+  /* Two-column layout */
+  .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+  .section-title { font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
+
+  /* Plans tab */
+  .toolbar {
+    display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; align-items: center;
+  }
+  .search-input {
+    background: var(--bg-input); border: 1px solid var(--border); border-radius: 6px;
+    color: var(--text); padding: 7px 12px; font-size: 0.85rem; flex: 1; min-width: 180px;
+  }
+  .search-input::placeholder { color: var(--text-muted); }
+  .filter-select {
+    background: var(--bg-input); border: 1px solid var(--border); border-radius: 6px;
+    color: var(--text); padding: 7px 10px; font-size: 0.85rem;
+  }
+
+  .plan-card {
+    display: block; background: var(--bg-card); border-radius: 8px;
+    padding: 14px 16px; margin-bottom: 10px;
+    transition: background 0.15s; cursor: pointer; text-decoration: none; color: inherit;
+  }
+  .plan-card:hover { background: var(--bg-hover); text-decoration: none; }
+  .plan-card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+  .plan-title { font-weight: 600; color: var(--text-bright); font-size: 0.95rem; }
+  .plan-theme { color: var(--text-dim); font-size: 0.8rem; font-style: italic; margin-top: 2px; }
+  .plan-meta { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; align-items: center; }
+  .plan-date { color: var(--text-muted); font-size: 0.75rem; }
+  .plan-actions { display: flex; gap: 6px; margin-top: 8px; }
+
+  /* Control panel */
+  .cp-section { margin-bottom: 28px; }
+  .cp-section h3 { font-size: 1rem; color: var(--text-bright); margin-bottom: 12px; }
+  .status-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
+  .status-dot.green { background: var(--approved); }
+  .status-dot.red { background: var(--failed); }
+  .status-dot.yellow { background: var(--review); }
+  .config-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  .config-table th { text-align: left; color: var(--text-muted); font-weight: 500; padding: 8px 12px; border-bottom: 1px solid var(--border); }
+  .config-table td { padding: 8px 12px; border-bottom: 1px solid var(--border); color: var(--text); }
+  .config-table tr:last-child td { border-bottom: none; }
+
+  .integration-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+  .integration-card { background: var(--bg-card); border-radius: 8px; padding: 14px; }
+  .integration-card h4 { font-size: 0.9rem; color: var(--text-bright); margin-bottom: 4px; }
+  .integration-card .feat { font-size: 0.78rem; color: var(--text-dim); }
+
+  .route-list { display: flex; flex-wrap: wrap; gap: 8px; }
+  .route-chip { background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; padding: 6px 12px; font-size: 0.82rem; }
+
+  /* Progress */
+  .progress-text { font-size: 0.85rem; color: var(--text-dim); margin-top: 8px; }
+  @keyframes dots { 0%,20%{content:''} 40%{content:'.'} 60%{content:'..'} 80%,100%{content:'...'} }
+  .progress-dots::after { content: ''; animation: dots 1.5s steps(1) infinite; }
+
+  /* Toast */
+  .toast {
+    position: fixed; bottom: 20px; right: 20px; background: var(--bg-card);
+    border: 1px solid var(--border); border-radius: 8px; padding: 12px 20px;
+    font-size: 0.88rem; z-index: 999; transform: translateY(100px); opacity: 0;
+    transition: all 0.3s;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast.error { border-color: var(--failed); }
+
+  .empty-state { color: var(--text-muted); text-align: center; padding: 40px; }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .stats-grid { grid-template-columns: repeat(3, 1fr); }
+    .row-2 { grid-template-columns: 1fr; }
+    .integration-grid { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 480px) {
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .shell { padding: 10px; }
+    .tab-btn { padding: 8px 14px; font-size: 0.82rem; }
   }
 </style>
 </head>
 <body>
+<div class="shell">
 
-<div class="header">
-  <div class="header-left">
+  <div class="header">
     <h1>Vibe Marketing</h1>
   </div>
-  <div class="header-right">
-    <input type="text" class="search-input" id="search" placeholder="Search plans..." oninput="filterPlans()">
-    <select class="filter-select" id="statusFilter" onchange="filterPlans()">
-      <option value="">All statuses</option>
-      <option value="review">Review</option>
-      <option value="approved">Approved</option>
-      <option value="in_progress">In Progress</option>
-      <option value="completed">Completed</option>
-      <option value="failed">Failed</option>
-    </select>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" data-tab="dashboard">Dashboard</button>
+    <button class="tab-btn" data-tab="plans">Plans</button>
+    <button class="tab-btn" data-tab="control">Control Panel</button>
   </div>
+
+  <!-- ==================== DASHBOARD TAB ==================== -->
+  <div id="tab-dashboard" class="tab-panel active">
+    <div id="stats-grid" class="stats-grid"></div>
+
+    <div class="quick-actions">
+      <input type="text" class="url-input" id="dash-url" placeholder="Paste Instagram Reel URL to process...">
+      <button class="btn" onclick="processReel('dash-url','dash-progress')">Process</button>
+      <button class="btn btn-green" id="approve-latest-btn" onclick="approveLatest()" style="display:none">Approve Latest</button>
+    </div>
+    <div id="dash-progress" class="progress-text" style="display:none"></div>
+
+    <div class="row-2">
+      <div>
+        <div class="section-title">Recent Activity</div>
+        <div class="card" id="activity-feed"><div class="empty-state">Loading...</div></div>
+      </div>
+      <div>
+        <div class="section-title">Plans by Category</div>
+        <div class="card" id="category-chart"><div class="empty-state">Loading...</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== PLANS TAB ==================== -->
+  <div id="tab-plans" class="tab-panel">
+    <div class="toolbar">
+      <input type="text" class="search-input" id="plan-search" placeholder="Search plans..." oninput="filterPlans()">
+      <select class="filter-select" id="plan-status-filter" onchange="filterPlans()">
+        <option value="">All statuses</option>
+        <option value="review">Review</option>
+        <option value="approved">Approved</option>
+        <option value="in_progress">In Progress</option>
+        <option value="completed">Completed</option>
+        <option value="failed">Failed</option>
+      </select>
+      <select class="filter-select" id="plan-category-filter" onchange="filterPlans()">
+        <option value="">All categories</option>
+      </select>
+      <select class="filter-select" id="plan-sort" onchange="sortAndRender()">
+        <option value="newest">Newest first</option>
+        <option value="oldest">Oldest first</option>
+        <option value="relevance">Relevance</option>
+        <option value="cost">Cost</option>
+      </select>
+      <button class="btn btn-green btn-sm" onclick="bulkApprove()">Approve All Review</button>
+    </div>
+    <div id="plans-list"><div class="empty-state">Loading...</div></div>
+  </div>
+
+  <!-- ==================== CONTROL PANEL TAB ==================== -->
+  <div id="tab-control" class="tab-panel">
+
+    <div class="cp-section">
+      <h3>Process Reel</h3>
+      <div class="card">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <input type="text" class="url-input" id="cp-url" placeholder="https://www.instagram.com/reel/...">
+          <button class="btn" onclick="processReel('cp-url','cp-progress')">Process</button>
+        </div>
+        <div id="cp-progress" class="progress-text" style="display:none"></div>
+      </div>
+    </div>
+
+    <div class="cp-section">
+      <h3>System Status</h3>
+      <div class="card" id="system-status">
+        <div style="display:flex;gap:24px;flex-wrap:wrap;">
+          <div><span class="status-dot yellow"></span>Checking...</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cp-section">
+      <h3>LLM Configuration</h3>
+      <div class="card" id="llm-config"><div class="empty-state">Loading...</div></div>
+    </div>
+
+    <div class="cp-section">
+      <h3>Integrations</h3>
+      <div class="integration-grid" id="integrations"><div class="empty-state">Loading...</div></div>
+    </div>
+
+    <div class="cp-section">
+      <h3>Routing</h3>
+      <div class="card" id="routing-config"><div class="empty-state">Loading...</div></div>
+    </div>
+
+  </div>
+
 </div>
 
-{{stats_html}}
-
-{{categories_html}}
+<div id="toast" class="toast"></div>
 
 <script>
-function toggleCategory(el) {
-  const plans = el.nextElementSibling;
-  const toggle = el.querySelector('.category-toggle');
-  plans.classList.toggle('collapsed');
-  toggle.textContent = plans.classList.contains('collapsed') ? '+' : '-';
-}
-function filterPlans() {
-  const q = document.getElementById('search').value.toLowerCase();
-  const status = document.getElementById('statusFilter').value;
-  document.querySelectorAll('.plan-card').forEach(card => {
-    const text = card.textContent.toLowerCase();
-    const cardStatus = card.dataset.status;
-    const matchQ = !q || text.includes(q);
-    const matchS = !status || cardStatus === status;
-    card.style.display = (matchQ && matchS) ? '' : 'none';
-  });
-  document.querySelectorAll('.category-section').forEach(sec => {
-    const visible = sec.querySelectorAll('.plan-card[style=""], .plan-card:not([style])');
-    const hidden = sec.querySelectorAll('.plan-card[style*="none"]');
-    sec.style.display = (visible.length === 0 && hidden.length > 0) ? 'none' : '';
-  });
-}
-</script>
+/* ── State ── */
+let allPlans = [];
+let dashboardTimer = null;
+const CAT_COLORS = {
+  marketing:'#3b82f6', sales:'#22c55e', ai_automation:'#8b5cf6',
+  operations:'#f59e0b', content:'#ec4899', general:'#6b7280',
+  social_media:'#06b6d4', business_ops:'#f97316', mindset:'#a855f7'
+};
+const CAT_LABELS = {
+  marketing:'Marketing', sales:'Sales', ai_automation:'AI & Automation',
+  operations:'Operations', content:'Content', general:'General',
+  social_media:'Social Media', business_ops:'Business Ops', mindset:'Mindset'
+};
 
+/* ── Tabs ── */
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+    location.hash = btn.dataset.tab;
+    loadTabData(btn.dataset.tab);
+  });
+});
+
+function loadTabData(tab) {
+  if (tab === 'dashboard') { loadDashboard(); startAutoRefresh(); }
+  else { stopAutoRefresh(); }
+  if (tab === 'plans') loadPlansTab();
+  if (tab === 'control') loadControlPanel();
+}
+
+/* ── Auto refresh ── */
+function startAutoRefresh() { stopAutoRefresh(); dashboardTimer = setInterval(loadDashboard, 30000); }
+function stopAutoRefresh() { if (dashboardTimer) { clearInterval(dashboardTimer); dashboardTimer = null; } }
+
+/* ── Dashboard ── */
+async function loadDashboard() {
+  try {
+    const data = await fetchJSON('/api/stats');
+    renderStats(data);
+    renderActivity(data.recent);
+    renderCategoryChart(data.by_category);
+    allPlans = data.recent;
+    // Show approve-latest if most recent is in review
+    const btn = document.getElementById('approve-latest-btn');
+    if (data.recent.length && data.recent[0].status === 'review') {
+      btn.style.display = '';
+      btn.dataset.reelId = data.recent[0].reel_id;
+    } else { btn.style.display = 'none'; }
+  } catch(e) { console.error('Dashboard load failed:', e); }
+}
+
+function renderStats(data) {
+  const s = data.by_status || {};
+  const cards = [
+    { label: 'Total Plans', value: data.total, color: 'total' },
+    { label: 'In Review', value: s.review || 0, color: 'review' },
+    { label: 'Approved', value: s.approved || 0, color: 'approved' },
+    { label: 'Completed', value: s.completed || 0, color: 'completed' },
+    { label: 'Total Cost', value: '$' + (data.total_cost || 0).toFixed(3), color: 'cost' },
+  ];
+  document.getElementById('stats-grid').innerHTML = cards.map(c =>
+    `<div class="stat-card" data-color="${c.color}"><div class="stat-value">${c.value}</div><div class="stat-label">${c.label}</div></div>`
+  ).join('');
+}
+
+function renderActivity(recent) {
+  const el = document.getElementById('activity-feed');
+  if (!recent || !recent.length) { el.innerHTML = '<div class="empty-state">No plans yet. Process a reel to get started.</div>'; return; }
+  el.innerHTML = recent.map(p => {
+    const date = (p.created_at || '').slice(0, 10);
+    return `<div class="activity-item">
+      <span class="badge badge-${p.status}">${(p.status||'').replace('_',' ')}</span>
+      <span class="activity-title"><a href="/plans/${esc(p.reel_id)}/view">${esc(p.title || 'Untitled')}</a></span>
+      <span class="activity-date">${date}</span>
+    </div>`;
+  }).join('');
+}
+
+function renderCategoryChart(cats) {
+  const el = document.getElementById('category-chart');
+  if (!cats || !Object.keys(cats).length) { el.innerHTML = '<div class="empty-state">No data</div>'; return; }
+  const max = Math.max(...Object.values(cats));
+  const sorted = Object.entries(cats).sort((a, b) => b[1] - a[1]);
+  el.innerHTML = sorted.map(([cat, count]) => {
+    const pct = max > 0 ? (count / max * 100) : 0;
+    const color = CAT_COLORS[cat] || '#6b7280';
+    const label = CAT_LABELS[cat] || cat.replace(/_/g, ' ');
+    return `<div class="chart-bar-row">
+      <span class="chart-label">${esc(label)}</span>
+      <div class="chart-track"><div class="chart-fill" style="width:${pct}%;background:${color}">${count}</div></div>
+    </div>`;
+  }).join('');
+}
+
+/* ── Plans Tab ── */
+async function loadPlansTab() {
+  try {
+    const data = await fetchJSON('/api/stats');
+    allPlans = data.recent;
+    // Also fetch full plan list via /plans/ endpoint
+    const full = await fetchJSON('/plans/');
+    const merged = [];
+    const seen = new Set();
+    for (const status of Object.keys(full)) {
+      for (const p of full[status]) {
+        if (!seen.has(p.reel_id)) { seen.add(p.reel_id); merged.push(p); }
+      }
+    }
+    allPlans = merged;
+    populateCategoryFilter();
+    sortAndRender();
+  } catch(e) { console.error('Plans load failed:', e); }
+}
+
+function populateCategoryFilter() {
+  const cats = new Set(allPlans.map(p => p.category || 'general'));
+  const sel = document.getElementById('plan-category-filter');
+  const current = sel.value;
+  sel.innerHTML = '<option value="">All categories</option>';
+  [...cats].sort().forEach(c => {
+    const label = CAT_LABELS[c] || c.replace(/_/g, ' ');
+    sel.innerHTML += `<option value="${c}">${esc(label)}</option>`;
+  });
+  sel.value = current;
+}
+
+function sortAndRender() {
+  const sort = document.getElementById('plan-sort').value;
+  let plans = [...allPlans];
+  if (sort === 'newest') plans.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
+  else if (sort === 'oldest') plans.sort((a, b) => (a.created_at || '').localeCompare(b.created_at || ''));
+  else if (sort === 'relevance') plans.sort((a, b) => (b.relevance_score || 0) - (a.relevance_score || 0));
+  else if (sort === 'cost') plans.sort((a, b) => (b.estimated_cost || 0) - (a.estimated_cost || 0));
+  renderPlanCards(plans);
+  filterPlans();
+}
+
+function renderPlanCards(plans) {
+  const el = document.getElementById('plans-list');
+  if (!plans.length) { el.innerHTML = '<div class="empty-state">No plans found.</div>'; return; }
+  el.innerHTML = plans.map(p => {
+    const score = p.relevance_score || 0;
+    const scorePct = score ? (score * 100).toFixed(0) + '%' : '';
+    const relColor = score >= 0.7 ? 'var(--approved)' : score >= 0.4 ? 'var(--review)' : 'var(--text-dim)';
+    const cost = p.estimated_cost || 0;
+    const date = (p.created_at || '').slice(0, 10);
+    const cat = CAT_LABELS[p.category] || (p.category || 'general').replace(/_/g, ' ');
+    const taskInfo = p.task_count ? `${p.task_count} tasks` : '';
+    const hoursInfo = p.total_hours ? `${p.total_hours.toFixed(1)}h` : '';
+    const extras = [taskInfo, hoursInfo].filter(Boolean).join(' / ');
+    return `<div class="plan-card" data-status="${p.status}" data-category="${p.category || 'general'}" data-reel="${esc(p.reel_id)}">
+      <div class="plan-card-top">
+        <div>
+          <a class="plan-title" href="/plans/${esc(p.reel_id)}/view">${esc(p.title || 'Untitled')}</a>
+          ${p.theme ? '<div class="plan-theme">' + esc(p.theme) + '</div>' : ''}
+        </div>
+        <span class="badge badge-${p.status}">${(p.status || '').replace('_', ' ')}</span>
+      </div>
+      <div class="plan-meta">
+        ${scorePct ? `<span class="badge badge-relevance" style="color:${relColor}">${scorePct}</span>` : ''}
+        ${p.routed_to ? `<span class="badge badge-route">${esc(p.routed_to)}</span>` : ''}
+        ${cost ? `<span class="badge badge-cost">$${cost.toFixed(3)}</span>` : ''}
+        <span style="font-size:0.78rem;color:var(--text-dim)">${esc(cat)}</span>
+        ${extras ? `<span style="font-size:0.78rem;color:var(--text-muted)">${extras}</span>` : ''}
+        <span class="plan-date">${date}</span>
+      </div>
+      <div class="plan-actions">
+        ${p.status === 'review' ? `<button class="btn btn-green btn-sm" onclick="event.stopPropagation();changeStatus('${esc(p.reel_id)}','approved',this)">Approve</button>
+          <button class="btn btn-sm" style="background:var(--failed)" onclick="event.stopPropagation();changeStatus('${esc(p.reel_id)}','failed',this)">Reject</button>` : ''}
+        ${p.status === 'approved' ? `<button class="btn btn-sm" style="background:var(--completed)" onclick="event.stopPropagation();changeStatus('${esc(p.reel_id)}','completed',this)">Complete</button>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function filterPlans() {
+  const q = document.getElementById('plan-search').value.toLowerCase();
+  const status = document.getElementById('plan-status-filter').value;
+  const cat = document.getElementById('plan-category-filter').value;
+  document.querySelectorAll('#plans-list .plan-card').forEach(card => {
+    const text = card.textContent.toLowerCase();
+    const matchQ = !q || text.includes(q);
+    const matchS = !status || card.dataset.status === status;
+    const matchC = !cat || card.dataset.category === cat;
+    card.style.display = (matchQ && matchS && matchC) ? '' : 'none';
+  });
+}
+
+/* ── Control Panel ── */
+async function loadControlPanel() {
+  loadSystemStatus();
+  loadModels();
+  loadCapabilities();
+  loadRoutes();
+}
+
+async function loadSystemStatus() {
+  const el = document.getElementById('system-status');
+  try {
+    const health = await fetchJSON('/health');
+    const stats = await fetchJSON('/api/stats');
+    const lastPlan = stats.recent && stats.recent.length ? stats.recent[0] : null;
+    const lastDate = lastPlan ? (lastPlan.created_at || '').slice(0, 19).replace('T', ' ') : 'Never';
+    el.innerHTML = `<div style="display:flex;gap:24px;flex-wrap:wrap;">
+      <div><span class="status-dot green"></span>API: ${esc(health.status || 'ok')}</div>
+      <div><span class="status-dot green"></span>Telegram Bot: Active</div>
+      <div>Last processed: ${esc(lastDate)}</div>
+      <div>Total plans: ${stats.total}</div>
+    </div>`;
+  } catch(e) {
+    el.innerHTML = '<div><span class="status-dot red"></span>API unreachable</div>';
+  }
+}
+
+async function loadModels() {
+  const el = document.getElementById('llm-config');
+  try {
+    const data = await fetchJSON('/api/config/models');
+    const rows = data.steps.map(s =>
+      `<tr>
+        <td>${esc(s.step)}</td>
+        <td style="font-family:monospace;font-size:0.82rem">${esc(s.model)}</td>
+        <td>${s.is_override ? '<span style="color:var(--review)">Override</span>' : '<span style="color:var(--text-muted)">Default</span>'}</td>
+        <td>$${s.prompt_price_per_m.toFixed(2)} / $${s.completion_price_per_m.toFixed(2)}</td>
+      </tr>`
+    ).join('');
+    el.innerHTML = `<table class="config-table">
+      <tr><th>Step</th><th>Model</th><th>Status</th><th>Price / 1M tokens (in/out)</th></tr>
+      ${rows}
+    </table>`;
+  } catch(e) { el.innerHTML = '<div class="empty-state">Failed to load</div>'; }
+}
+
+async function loadCapabilities() {
+  const el = document.getElementById('integrations');
+  try {
+    const data = await fetchJSON('/api/config/capabilities');
+    const items = [...(data.integrations || []), ...(data.mcps || [])];
+    if (!items.length) { el.innerHTML = '<div class="empty-state">No integrations configured</div>'; return; }
+    el.innerHTML = items.map(i => {
+      const features = i.features || i.capabilities || [];
+      const statusColor = i.status === 'active' || i.status === 'implemented' ? 'green' : 'yellow';
+      return `<div class="integration-card">
+        <h4><span class="status-dot ${statusColor}"></span>${esc(i.name)}</h4>
+        <div style="font-size:0.78rem;color:var(--text-dim);margin-bottom:4px">${esc(i.status)}</div>
+        ${i.host ? `<div class="feat">${esc(i.host)}</div>` : ''}
+        ${i.url ? `<div class="feat">${esc(i.url)}</div>` : ''}
+        ${features.length ? `<div class="feat">${features.map(f => esc(f)).join(', ')}</div>` : ''}
+      </div>`;
+    }).join('');
+  } catch(e) { el.innerHTML = '<div class="empty-state">Failed to load</div>'; }
+}
+
+async function loadRoutes() {
+  const el = document.getElementById('routing-config');
+  try {
+    const data = await fetchJSON('/api/config/routes');
+    let html = '<div class="section-title" style="margin-bottom:8px">Valid Targets</div>';
+    html += '<div class="route-list" style="margin-bottom:16px">' +
+      data.targets.map(t => `<span class="route-chip"><span class="badge badge-route">${esc(t)}</span></span>`).join('') +
+      '</div>';
+    html += '<div class="section-title" style="margin-bottom:8px">Category Fallbacks</div>';
+    html += '<table class="config-table"><tr><th>Category</th><th>Default Target</th></tr>';
+    for (const [cat, target] of Object.entries(data.fallback_map)) {
+      const label = CAT_LABELS[cat] || cat.replace(/_/g, ' ');
+      html += `<tr><td>${esc(label)}</td><td><span class="badge badge-route">${esc(target)}</span></td></tr>`;
+    }
+    html += '</table>';
+    el.innerHTML = html;
+  } catch(e) { el.innerHTML = '<div class="empty-state">Failed to load</div>'; }
+}
+
+/* ── Actions ── */
+async function processReel(inputId, progressId) {
+  const input = document.getElementById(inputId);
+  const progress = document.getElementById(progressId);
+  const url = input.value.trim();
+  if (!url) { showToast('Please enter a reel URL', true); return; }
+
+  progress.style.display = '';
+  progress.innerHTML = 'Processing reel<span class="progress-dots"></span> (this takes 60-90s)';
+  input.disabled = true;
+
+  try {
+    const res = await fetch('/process-reel', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reel_url: url }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Processing failed');
+    progress.innerHTML = `Done! Plan: <a href="/plans/${esc(data.reel_id)}/view">${esc(data.plan_title || 'View plan')}</a>`;
+    showToast('Reel processed successfully');
+    input.value = '';
+    loadDashboard();
+  } catch(e) {
+    progress.innerHTML = 'Error: ' + esc(e.message);
+    showToast(e.message, true);
+  } finally { input.disabled = false; }
+}
+
+async function changeStatus(reelId, status, btn) {
+  if (btn) btn.disabled = true;
+  try {
+    const res = await fetch(`/plans/${encodeURIComponent(reelId)}/status`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status }),
+    });
+    if (!res.ok) { const d = await res.json(); throw new Error(d.detail || 'Update failed'); }
+    showToast(`Plan ${status}`);
+    // Refresh current tab
+    const activeTab = document.querySelector('.tab-btn.active').dataset.tab;
+    loadTabData(activeTab);
+  } catch(e) { showToast(e.message, true); }
+  finally { if (btn) btn.disabled = false; }
+}
+
+async function approveLatest() {
+  const btn = document.getElementById('approve-latest-btn');
+  const reelId = btn.dataset.reelId;
+  if (reelId) await changeStatus(reelId, 'approved', btn);
+}
+
+async function bulkApprove() {
+  const cards = document.querySelectorAll('#plans-list .plan-card[data-status="review"]');
+  const ids = [...cards].map(c => c.dataset.reel).filter(Boolean);
+  if (!ids.length) { showToast('No plans in review', true); return; }
+  if (!confirm(`Approve ${ids.length} plan(s)?`)) return;
+  for (const id of ids) { await changeStatus(id, 'approved', null); }
+}
+
+/* ── Utilities ── */
+async function fetchJSON(url) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
+function esc(s) {
+  if (!s) return '';
+  const d = document.createElement('div');
+  d.textContent = String(s);
+  return d.innerHTML;
+}
+
+function showToast(msg, isError) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (isError ? ' error' : '');
+  setTimeout(() => { t.className = 'toast'; }, 3000);
+}
+
+/* ── Init ── */
+(function init() {
+  const hash = location.hash.replace('#', '') || 'dashboard';
+  const validTabs = ['dashboard', 'plans', 'control'];
+  const tab = validTabs.includes(hash) ? hash : 'dashboard';
+  if (tab !== 'dashboard') {
+    document.querySelectorAll('.tab-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.tab === tab);
+    });
+    document.querySelectorAll('.tab-panel').forEach(p => {
+      p.classList.toggle('active', p.id === 'tab-' + tab);
+    });
+  }
+  loadTabData(tab);
+})();
+</script>
 </body>
 </html>
