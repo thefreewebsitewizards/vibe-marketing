@@ -99,7 +99,7 @@ def generate_plan(analysis: AnalysisResult, metadata: ReelMetadata) -> tuple[Imp
     )
 
     logger.info("Generating implementation plan...")
-    chat_result = chat(system=system_prompt, user_content=user_prompt, max_tokens=4096, model_override=get_model_for_step("plan"))
+    chat_result = chat(system=system_prompt, user_content=user_prompt, max_tokens=8192, model_override=get_model_for_step("plan"))
 
     try:
         data = extract_json(chat_result.text, context="planner")

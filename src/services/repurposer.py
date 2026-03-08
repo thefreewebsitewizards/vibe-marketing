@@ -17,7 +17,7 @@ def generate_repurposing_plan(
     system_prompt, user_prompt = build_repurposing_prompt(analysis, metadata, transcript)
 
     logger.info("Generating content repurposing plan...")
-    chat_result = chat(system=system_prompt, user_content=user_prompt, max_tokens=4096, model_override=get_model_for_step("repurposing"))
+    chat_result = chat(system=system_prompt, user_content=user_prompt, max_tokens=8192, model_override=get_model_for_step("repurposing"))
 
     try:
         data = extract_json(chat_result.text, context="repurposer")

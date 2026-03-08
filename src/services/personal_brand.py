@@ -19,7 +19,7 @@ def generate_personal_brand_plan(
     )
 
     logger.info("Generating personal brand content plan...")
-    chat_result = chat(system=system_prompt, user_content=user_prompt, max_tokens=4096, model_override=get_model_for_step("personal_brand"))
+    chat_result = chat(system=system_prompt, user_content=user_prompt, max_tokens=8192, model_override=get_model_for_step("personal_brand"))
 
     try:
         data = extract_json(chat_result.text, context="personal_brand")
