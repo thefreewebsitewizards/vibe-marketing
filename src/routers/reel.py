@@ -1,6 +1,11 @@
+import json
+import threading
+from datetime import datetime
+
 from fastapi import APIRouter, HTTPException
 from loguru import logger
 
+from src.config import settings
 from src.models import ReelRequest, PipelineResult, PlanStatus, TranscriptResult, CostBreakdown
 from src.services.downloader import download_reel, extract_shortcode
 from src.services.audio import extract_audio
@@ -13,31 +18,54 @@ from src.services.repurposer import generate_repurposing_plan
 from src.services.personal_brand import generate_personal_brand_plan
 from src.utils.file_ops import create_temp_dir, cleanup_temp_dir
 from src.utils.plan_writer import write_plan
-from src.utils.plan_manager import is_duplicate
+from src.utils.plan_manager import is_duplicate, get_index, save_index
 
 router = APIRouter()
 
 
-@router.post("/process-reel")
-def process_reel(request: ReelRequest) -> dict:
-    """Full pipeline: download → extract audio/frames → transcribe → analyze → plan → store."""
-    reel_id = ""
+def _add_processing_entry(reel_id: str, reel_url: str) -> None:
+    """Add a placeholder entry to the plan index so duplicate checks work."""
+    index = get_index()
+    date_str = datetime.now().strftime("%Y-%m-%d")
+    entry = {
+        "reel_id": reel_id,
+        "title": f"Processing: {reel_id}",
+        "status": PlanStatus.PROCESSING.value,
+        "plan_dir": f"{date_str}_{reel_id}",
+        "created_at": datetime.now().isoformat(),
+        "source_url": reel_url,
+        "theme": "",
+        "category": "",
+        "relevance_score": 0.0,
+        "estimated_cost": 0.0,
+        "routed_to": "",
+        "task_count": 0,
+        "total_hours": 0.0,
+    }
+    index["plans"].append(entry)
+    save_index(index)
+
+
+def _update_processing_entry(reel_id: str, status: PlanStatus, error: str = "") -> None:
+    """Update the processing entry status (used for marking failures)."""
+    index = get_index()
+    for entry in reversed(index["plans"]):
+        if entry["reel_id"] == reel_id:
+            entry["status"] = status.value
+            if error:
+                entry["title"] = f"Failed: {error[:100]}"
+            break
+    save_index(index)
+
+
+def _run_pipeline(reel_id: str, reel_url: str) -> None:
+    """Run the full pipeline in a background thread."""
     try:
-        reel_id = extract_shortcode(request.reel_url)
+        logger.info(f"Background pipeline started for {reel_id}")
 
-        if is_duplicate(reel_id):
-            raise HTTPException(
-                status_code=409,
-                detail=f"Reel {reel_id} has already been processed. Check /plans/{reel_id} for its status.",
-            )
-
-        logger.info(f"Processing reel: {reel_id}")
-
-        # Setup
         temp_dir = create_temp_dir(reel_id)
 
-        # Pipeline — branch for carousel vs reel
-        download_result, metadata = download_reel(request.reel_url, temp_dir)
+        download_result, metadata = download_reel(reel_url, temp_dir)
 
         costs = CostBreakdown()
 
@@ -67,7 +95,6 @@ def process_reel(request: ReelRequest) -> dict:
         personal_brand_plan, pb_cr = generate_personal_brand_plan(analysis, metadata, transcript.text)
         costs.add("personal_brand", pb_cr.model, pb_cr.prompt_tokens, pb_cr.completion_tokens, pb_cr.cost_usd)
 
-        # Store results
         result = PipelineResult(
             reel_id=reel_id,
             status=PlanStatus.REVIEW,
@@ -80,45 +107,54 @@ def process_reel(request: ReelRequest) -> dict:
             similarity=similarity,
             cost_breakdown=costs,
         )
-        plan_dir = write_plan(result)
 
-        # Read back the full plan markdown for review
-        plan_md = (plan_dir / "plan.md").read_text()
+        # Remove the placeholder processing entry before write_plan adds the real one
+        index = get_index()
+        index["plans"] = [
+            e for e in index["plans"]
+            if not (e["reel_id"] == reel_id and e["status"] == PlanStatus.PROCESSING.value)
+        ]
+        save_index(index)
 
-        # Cleanup temp files
+        write_plan(result)
+
         cleanup_temp_dir(reel_id)
 
-        logger.info(f"Pipeline complete for {reel_id}")
-        response = {
-            "status": "success",
-            "reel_id": reel_id,
-            "plan_title": plan.title,
-            "plan_summary": plan.summary,
-            "tasks_count": len(plan.tasks),
-            "total_hours": plan.total_estimated_hours,
-            "plan_dir": str(plan_dir),
-            "relevance_score": analysis.relevance_score,
-            "plan_markdown": plan_md,
-        }
-        if repurposing_plan:
-            response["repurposing_tasks_count"] = len(repurposing_plan.tasks)
-            response["repurposing_total_hours"] = repurposing_plan.total_estimated_hours
-        if personal_brand_plan:
-            response["personal_brand_tasks_count"] = len(personal_brand_plan.tasks)
-            response["personal_brand_total_hours"] = personal_brand_plan.total_estimated_hours
-        if similarity and similarity.similar_plans:
-            response["similarity"] = {
-                "max_score": similarity.max_score,
-                "recommendation": similarity.recommendation,
-                "similar_plans": [
-                    {"title": p.title, "score": p.score}
-                    for p in similarity.similar_plans
-                ],
-            }
-        return response
+        logger.info(f"Background pipeline complete for {reel_id}")
 
+    except Exception as e:
+        logger.error(f"Background pipeline failed for {reel_id}: {e}")
+        _update_processing_entry(reel_id, PlanStatus.FAILED, str(e))
+
+
+@router.post("/process-reel", status_code=202)
+def process_reel(request: ReelRequest) -> dict:
+    """Accept a reel for processing. Returns 202 immediately; pipeline runs in the background."""
+    try:
+        reel_id = extract_shortcode(request.reel_url)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        logger.error(f"Pipeline failed for {reel_id}: {e}")
-        raise HTTPException(status_code=500, detail=f"Pipeline failed: {e}")
+
+    if is_duplicate(reel_id):
+        raise HTTPException(
+            status_code=409,
+            detail=f"Reel {reel_id} has already been processed. Check /plans/{reel_id} for its status.",
+        )
+
+    _add_processing_entry(reel_id, request.reel_url)
+
+    thread = threading.Thread(
+        target=_run_pipeline,
+        args=(reel_id, request.reel_url),
+        daemon=True,
+        name=f"pipeline-{reel_id}",
+    )
+    thread.start()
+
+    logger.info(f"Pipeline dispatched to background for {reel_id}")
+
+    return {
+        "status": "processing",
+        "reel_id": reel_id,
+        "poll_url": f"/plans/{reel_id}",
+    }

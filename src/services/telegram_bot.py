@@ -156,10 +156,10 @@ async def cmd_plans(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Show all plans grouped by status."""
     lines = ["*Plans Overview*\n"]
 
-    for status in [PlanStatus.REVIEW, PlanStatus.APPROVED, PlanStatus.IN_PROGRESS, PlanStatus.COMPLETED, PlanStatus.FAILED]:
+    for status in [PlanStatus.PROCESSING, PlanStatus.REVIEW, PlanStatus.APPROVED, PlanStatus.IN_PROGRESS, PlanStatus.COMPLETED, PlanStatus.FAILED]:
         plans = get_plans_by_status(status)
         if plans:
-            emoji = {"review": "📋", "approved": "✅", "in_progress": "⚡", "completed": "✔️", "failed": "❌"}
+            emoji = {"processing": "⏳", "review": "📋", "approved": "✅", "in_progress": "⚡", "completed": "✔️", "failed": "❌"}
             lines.append(f"\n{emoji.get(status.value, '•')} *{status.value.upper()}* ({len(plans)})")
             for p in plans[-5:]:  # Show last 5 per status
                 theme_hint = f" | {p.get('theme', '')[:40]}" if p.get("theme") else ""

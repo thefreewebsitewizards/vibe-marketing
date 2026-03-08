@@ -4,6 +4,9 @@ services:
     env_file: .env
     volumes:
       - ./plans:/app/plans
+      - ../:/app/sister-projects
+    environment:
+      - SISTER_PROJECTS_DIR=/app/sister-projects
     restart: unless-stopped
     expose:
       - "8000"

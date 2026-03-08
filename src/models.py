@@ -4,6 +4,7 @@ from pydantic import BaseModel, Field
 
 
 class PlanStatus(str, Enum):
+    PROCESSING = "processing"
     REVIEW = "review"
     APPROVED = "approved"
     IN_PROGRESS = "in_progress"
