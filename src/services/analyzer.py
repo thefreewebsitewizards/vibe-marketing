@@ -51,7 +51,7 @@ def analyze_reel(
         system_prompt, user_prompt = build_analysis_prompt(transcript, metadata)
         openai_content = user_prompt
 
-    chat_result = chat(system=system_prompt, user_content=openai_content, max_tokens=4000, model_override=get_model_for_step("analysis"))
+    chat_result = chat(system=system_prompt, user_content=openai_content, max_tokens=8192, model_override=get_model_for_step("analysis"))
 
     # Parse structured JSON from response
     try:
@@ -156,7 +156,7 @@ def analyze_carousel(
     text_block = {"type": "text", "text": user_content[-1]["text"]}
     openai_content = image_blocks + [text_block]
 
-    chat_result = chat(system=system_prompt, user_content=openai_content, max_tokens=4000, model_override=get_model_for_step("analysis"))
+    chat_result = chat(system=system_prompt, user_content=openai_content, max_tokens=8192, model_override=get_model_for_step("analysis"))
 
     try:
         data = extract_json(chat_result.text, context="carousel_analyzer")
