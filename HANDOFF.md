@@ -1,64 +1,66 @@
-# Session Handoff — 2026-03-07 (Session 2)
+# Session Handoff — 2026-03-09 (Session 6)
 
 ## Project Overview
 - Instagram Reel → Business Strategy Pipeline (FastAPI + Telegram bot + OpenRouter LLM)
-- Key ref: `CLAUDE.md` for full architecture, commands, and execution rules
+- Ref: `CLAUDE.md` for full architecture, commands, execution rules
 
 ## Completed This Session
 
-### Dashboard + Deployment + Cost Tracking (all done)
-1. **Cost Tracking** — `src/services/llm.py`: `chat()` returns `ChatResult` with text + tokens + cost. `MODEL_PRICING` dict, `estimate_cost()`. All callers updated to return `(result, ChatResult)` tuples. `CostBreakdown`/`LLMCallCost` models in `src/models.py`. Costs accumulated in `reel.py` and `telegram_bot.py`, persisted in `metadata.json` and `_index.json`, shown in Telegram summary and HTML cost table.
+### 1. Shared cross-project context system (commit `e6337f8`)
+- Created `~/projects/openclaw/.shared-context/` with 10 project status files
+- `src/utils/shared_context.py`: loader reads from local dev path, Docker bundled path, or repo-relative fallback
+- Both prompts (`analyze_reel.py`, `generate_plan.py`) now dynamically load business context from shared files instead of hardcoded text
+- Global rule in `~/.claude/rules/standards.md` tells every Claude session to update its context file after changes
+- User ran bootstrap prompt in all project terminals — all 10 files populated
 
-2. **Per-step model overrides** — `src/config.py` has `openrouter_model_analysis`, `openrouter_model_plan`, etc. `llm.py:get_model_for_step()` resolves per-step model. Default is now `gemini-2.5-pro` for quality, only similarity uses Flash.
+### 2. Bundled shared context for production (commit `ea7b1d8`)
+- `shared-context/` directory in repo, `COPY`'d in Dockerfile
+- Pre-push git hook (`.git/hooks/pre-push`) auto-syncs `~/.shared-context/*.md` → `shared-context/` and commits before push
+- Production Docker reads from `/app/shared-context/` when local path unavailable
 
-3. **Dashboard** — `static/dashboard.html` (dark theme, search, status filter, category grouping). `src/routers/dashboard.py` serves `GET /` with stats + plan cards. `src/main.py` registers dashboard router + mounts `/static`.
+### 3. Cost breakdown page (commit `e6337f8`)
+- New `/costs` route in `src/routers/dashboard.py` with `static/costs.html` template
+- Shows: total estimated vs actual cost, total tokens, cost-by-step bar chart, per-plan cost rows with colored step pills
+- Dashboard "Total Cost" stat is clickable → links to `/costs`
+- Plan view "Cost Breakdown" header links to `/costs` too
 
-4. **Action Buttons** — `static/plan_view.html` has Approve/Reject/Complete/Dashboard buttons with `fetch()` to `PATCH /plans/{reel_id}/status`. `plan_writer.py:_build_action_buttons()` renders them.
-
-5. **Deployment** — `docker-compose.yml` updated: nginx replaced with `cloudflared` for Cloudflare Tunnel. `DEPLOY.md` created with step-by-step guide.
-
-6. **Execution Watcher** — `scripts/execution_watcher.py`: polls `_approved_queue.json` every 60s, transitions plans to `in_progress`. `plan_manager.py` POSTs to n8n webhook on approval. `config.py` has `n8n_execution_webhook`.
-
-### Tests
-- 24 passing (`python3 -m pytest tests/test_pipeline.py -v`)
+### 4. Proportional analysis / over-analysis fix (commit `e6337f8`)
+- Analysis prompt: "MATCH DEPTH TO COMPLEXITY" — simple videos get short analysis
+- Plan prompt: 1 task for simple things (e.g., "install this skill"), prefer 1-2 tasks, explicit bad example added
+- Plan prompt: tasks should name which specific project they apply to (rule 6)
 
 ## Key Decisions
-- Default model changed to `google/gemini-2.5-pro` (~$0.08-0.15/reel) — user wants best quality, cost is not a concern
-- Only similarity check stays on Flash (just text comparison, no reasoning needed)
-- Cloudflare Tunnel instead of nginx+certbot (simpler, no port exposure)
-- Dashboard uses same `{{placeholder}}` template pattern as plan_view.html (no Jinja2 dep)
+- Pre-commit hooks can't modify commits (git limitation) — used pre-push hook instead
+- Shared context bundled in repo (not volume mount) so production works when local machine is off
+- Other projects read `.shared-context/` on-demand (lazy); only ReelBot injects it into every LLM call
 
-## Next Feature: Plan Routing to Sister Folders
+## Priority Next Steps
 
-### What Dylan wants
-Plans should be routed to the correct sister project folder based on content:
-- Claude upgrades → `../claude-upgrades/`
-- OpenClaw upgrades → `../` (openclaw root or relevant subfolder)
-- Social media / DDB content → `../ddb/`
-- Business ops (email, sales, marketing) → `../tfww/` (creating subfolders as needed)
-- n8n automations → `../n8n-automations/`
-- GHL stuff → `../ghl-fix/` or similar
+### 1. Continue training calibration
+- User needs to rate the 5 resent plans in Telegram (feedback buttons sent last session)
+- After rating, send a NEW reel to test improved prompts + shared context
+- Compare before/after quality
 
-**Not the full plan** — just a blurb + link to the web page (`https://reel-bot.leadneedleai.com/plans/{reel_id}/view`).
+### 2. Consider removing repurposing + personal brand plans
+- Each adds ~$0.04 cost per reel
+- User questioned their value last session
 
-### Sister folders (at `/home/gamin/projects/openclaw/claude-code-projects/`):
-- `aias`, `claude-upgrades`, `ddb`, `ghl-fix`, `masters-week`, `n8n-automations`, `pixel-agents`, `tfww`, `vibe-marketing`
+### 3. Keep shared context files fresh
+- When projects change significantly, their `.shared-context/*.md` files should be updated
+- Pre-push hook handles syncing to reelbot repo automatically
 
-### Implementation approach
-1. Add routing rules — map `analysis.category` + keywords to target folder
-2. After `write_plan()`, create a small `.md` blurb file in the target sister folder
-3. Blurb contains: title, theme, summary, link to web view
-4. May need a new field on `AnalysisResult` or use existing `category` + `business_applications[].target_system`
-5. Consider having the LLM suggest the routing target during analysis
+### 4. Fix root-owned .env files (carried over)
+- `/home/gamin/projects/openclaw/.env` and `claude-code-projects/tfww/.env` may need `chown`
 
-### Key files to modify
-- `src/utils/plan_writer.py` — add routing logic after plan is written
-- `src/models.py` — possibly add `routing_target` field
-- `src/config.py` — sister folder base path
-- Could also be a new `src/utils/plan_router.py`
+## Deploy Quick Reference
+```bash
+cd ~/projects/openclaw/claude-code-projects/reelbot
+git push origin main && git push origin main:deploy
+COOLIFY_TOKEN=$(grep '^COOLIFY_API_TOKEN=' .env | cut -d= -f2 | tr -d '"' | tr -d "'" | tr -d '\r')
+ssh root@76.13.29.110 "curl -s -X POST http://localhost:8000/api/v1/applications/l0g48c8g4wsskc40co4kssc8/restart -H 'Authorization: Bearer $COOLIFY_TOKEN' -H 'Content-Type: application/json'"
+```
 
 ## Context Notes
-- Tests: `python3 -m pytest tests/test_pipeline.py -v` — 24 passing
-- All imports verified: `python3 -c "from src.main import app"`
-- `.env` overrides config defaults — `OPENROUTER_MODEL` in .env may still be set to flash
-- Search terms: `ChatResult`, `CostBreakdown`, `get_model_for_step`, `_build_action_buttons`, `dashboard`
+- Telegram bot token in .env has Windows line endings — always `tr -d '\r'` when extracting
+- Pre-push hook is in `.git/hooks/pre-push` (not tracked by git — recreate if repo is re-cloned)
+- Shared context loader priority: `~/projects/openclaw/.shared-context/` → `/app/shared-context/` → `./shared-context/`
