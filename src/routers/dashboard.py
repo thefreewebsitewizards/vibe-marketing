@@ -23,6 +23,7 @@ _STATUS_COLORS = {
     "approved": "#22c55e",
     "in_progress": "#3b82f6",
     "completed": "#6b7280",
+    "skipped": "#94a3b8",
     "failed": "#ef4444",
 }
 

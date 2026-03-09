@@ -86,6 +86,13 @@ def _run_pipeline(reel_id: str, reel_url: str) -> None:
         if sim_cr:
             costs.add("similarity", sim_cr.model, sim_cr.prompt_tokens, sim_cr.completion_tokens, sim_cr.cost_usd)
 
+        if similarity.recommendation == "skip":
+            logger.info(f"Skipping {reel_id}: too similar to existing plans (max_score={similarity.max_score})")
+            _update_processing_entry(reel_id, PlanStatus.SKIPPED,
+                f"Too similar to existing plans (score {similarity.max_score})")
+            cleanup_temp_dir(reel_id)
+            return
+
         plan, plan_cr = generate_plan(analysis, metadata)
         costs.add("plan", plan_cr.model, plan_cr.prompt_tokens, plan_cr.completion_tokens, plan_cr.cost_usd)
 
