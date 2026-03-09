@@ -203,11 +203,11 @@ def _run_pipeline(reel_id: str, reel_url: str, user_context: str = "") -> None:
             frame_paths = extract_keyframes(video_path, temp_dir)
             transcript = transcribe(audio_path)
             analysis, analysis_cr = analyze_reel(transcript, metadata, frame_paths, user_context=user_context)
-        costs.add("analysis", analysis_cr.model, analysis_cr.prompt_tokens, analysis_cr.completion_tokens, analysis_cr.cost_usd)
+        costs.add("analysis", analysis_cr.model, analysis_cr.prompt_tokens, analysis_cr.completion_tokens, analysis_cr.cost_usd, analysis_cr.generation_id)
 
         similarity, sim_cr = check_plan_similarity(analysis)
         if sim_cr:
-            costs.add("similarity", sim_cr.model, sim_cr.prompt_tokens, sim_cr.completion_tokens, sim_cr.cost_usd)
+            costs.add("similarity", sim_cr.model, sim_cr.prompt_tokens, sim_cr.completion_tokens, sim_cr.cost_usd, sim_cr.generation_id)
 
         if similarity.recommendation == "skip":
             logger.info(f"Skipping {reel_id}: too similar to existing plans (max_score={similarity.max_score})")
@@ -219,13 +219,13 @@ def _run_pipeline(reel_id: str, reel_url: str, user_context: str = "") -> None:
             return
 
         plan, plan_cr = generate_plan(analysis, metadata, user_context=user_context)
-        costs.add("plan", plan_cr.model, plan_cr.prompt_tokens, plan_cr.completion_tokens, plan_cr.cost_usd)
+        costs.add("plan", plan_cr.model, plan_cr.prompt_tokens, plan_cr.completion_tokens, plan_cr.cost_usd, plan_cr.generation_id)
 
         repurposing_plan, rep_cr = generate_repurposing_plan(analysis, metadata, transcript.text)
-        costs.add("repurposing", rep_cr.model, rep_cr.prompt_tokens, rep_cr.completion_tokens, rep_cr.cost_usd)
+        costs.add("repurposing", rep_cr.model, rep_cr.prompt_tokens, rep_cr.completion_tokens, rep_cr.cost_usd, rep_cr.generation_id)
 
         personal_brand_plan, pb_cr = generate_personal_brand_plan(analysis, metadata, transcript.text)
-        costs.add("personal_brand", pb_cr.model, pb_cr.prompt_tokens, pb_cr.completion_tokens, pb_cr.cost_usd)
+        costs.add("personal_brand", pb_cr.model, pb_cr.prompt_tokens, pb_cr.completion_tokens, pb_cr.cost_usd, pb_cr.generation_id)
 
         result = PipelineResult(
             reel_id=reel_id,

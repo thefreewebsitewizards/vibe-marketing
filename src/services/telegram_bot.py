@@ -62,6 +62,24 @@ def _esc(text: str) -> str:
     return text
 
 
+def _format_cost_line(costs: CostBreakdown) -> str:
+    """Format cost breakdown for Telegram message."""
+    lines = []
+    for c in costs.calls:
+        model_short = c.model.split("/")[-1] if c.model else "?"
+        actual = f" → ${c.actual_cost_usd:.4f}" if c.actual_cost_usd is not None else ""
+        lines.append(f"  {c.step}: ${c.cost_usd:.4f}{actual} ({model_short}, {c.prompt_tokens + c.completion_tokens:,}tok)")
+
+    detail_text = "\n".join(lines)
+
+    if costs.total_actual_cost_usd is not None:
+        total_line = f"*Cost:* ${costs.total_actual_cost_usd:.4f} actual (${costs.total_cost_usd:.4f} est\\.)"
+    else:
+        total_line = f"*Cost:* ${costs.total_cost_usd:.4f} est\\."
+
+    return f"\n\n{total_line}\n{detail_text}"
+
+
 async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "Send me an Instagram Reel link and I'll turn it into an actionable business plan.\n\n"
@@ -272,11 +290,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             frame_paths = extract_keyframes(video_path, temp_dir)
             transcript = transcribe(audio_path)
             analysis, analysis_cr = analyze_reel(transcript, metadata, frame_paths, user_context=user_context)
-        costs.add("analysis", analysis_cr.model, analysis_cr.prompt_tokens, analysis_cr.completion_tokens, analysis_cr.cost_usd)
+        costs.add("analysis", analysis_cr.model, analysis_cr.prompt_tokens, analysis_cr.completion_tokens, analysis_cr.cost_usd, analysis_cr.generation_id)
 
         similarity, sim_cr = check_plan_similarity(analysis)
         if sim_cr:
-            costs.add("similarity", sim_cr.model, sim_cr.prompt_tokens, sim_cr.completion_tokens, sim_cr.cost_usd)
+            costs.add("similarity", sim_cr.model, sim_cr.prompt_tokens, sim_cr.completion_tokens, sim_cr.cost_usd, sim_cr.generation_id)
 
         if similarity.recommendation == "skip" or similarity.max_score > 70:
             _save_analysis_for_resume_telegram(reel_id, analysis, metadata, similarity, costs, transcript)
@@ -285,13 +303,13 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
 
         plan, plan_cr = generate_plan(analysis, metadata, user_context=user_context)
-        costs.add("plan", plan_cr.model, plan_cr.prompt_tokens, plan_cr.completion_tokens, plan_cr.cost_usd)
+        costs.add("plan", plan_cr.model, plan_cr.prompt_tokens, plan_cr.completion_tokens, plan_cr.cost_usd, plan_cr.generation_id)
 
         repurposing_plan, rep_cr = generate_repurposing_plan(analysis, metadata, transcript.text)
-        costs.add("repurposing", rep_cr.model, rep_cr.prompt_tokens, rep_cr.completion_tokens, rep_cr.cost_usd)
+        costs.add("repurposing", rep_cr.model, rep_cr.prompt_tokens, rep_cr.completion_tokens, rep_cr.cost_usd, rep_cr.generation_id)
 
         personal_brand_plan, pb_cr = generate_personal_brand_plan(analysis, metadata, transcript.text)
-        costs.add("personal_brand", pb_cr.model, pb_cr.prompt_tokens, pb_cr.completion_tokens, pb_cr.cost_usd)
+        costs.add("personal_brand", pb_cr.model, pb_cr.prompt_tokens, pb_cr.completion_tokens, pb_cr.cost_usd, pb_cr.generation_id)
 
         result = PipelineResult(
             reel_id=reel_id,
@@ -362,10 +380,12 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             elif similarity.recommendation == "skip":
                 similarity_line += " — very similar, review carefully"
 
+        # Resolve actual costs from OpenRouter
+        costs.resolve_actual_costs()
+
         cost_line = ""
         if costs.calls:
-            details = ", ".join(f"{c.step} ${c.cost_usd:.3f}" for c in costs.calls)
-            cost_line = f"\n\nEst\\. cost: ${costs.total_cost_usd:.3f} ({details})"
+            cost_line = _format_cost_line(costs)
 
         summary = (
             f"*{_esc(plan.title)}*\n"
@@ -476,9 +496,14 @@ async def _send_similarity_notification(
 
     theme_text = f"*Theme:* {_esc(analysis.theme)}\n" if analysis.theme else ""
 
+    costs.resolve_actual_costs()
     cost_line = ""
     if costs.calls:
-        cost_line = f"\n\nAnalysis cost so far: ${costs.total_cost_usd:.3f}"
+        actual = costs.total_actual_cost_usd
+        if actual is not None:
+            cost_line = f"\n\nAnalysis cost so far: ${actual:.4f} actual (${costs.total_cost_usd:.4f} est\\.)"
+        else:
+            cost_line = f"\n\nAnalysis cost so far: ${costs.total_cost_usd:.4f} est\\."
 
     message = (
         f"*Similar content detected*\n\n"
@@ -558,13 +583,13 @@ async def _handle_generate_anyway(reel_id: str, query) -> None:
 
         # Run plan generation (skip download + analysis)
         plan, plan_cr = generate_plan(analysis, metadata)
-        costs.add("plan", plan_cr.model, plan_cr.prompt_tokens, plan_cr.completion_tokens, plan_cr.cost_usd)
+        costs.add("plan", plan_cr.model, plan_cr.prompt_tokens, plan_cr.completion_tokens, plan_cr.cost_usd, plan_cr.generation_id)
 
         repurposing_plan, rep_cr = generate_repurposing_plan(analysis, metadata, transcript_text)
-        costs.add("repurposing", rep_cr.model, rep_cr.prompt_tokens, rep_cr.completion_tokens, rep_cr.cost_usd)
+        costs.add("repurposing", rep_cr.model, rep_cr.prompt_tokens, rep_cr.completion_tokens, rep_cr.cost_usd, rep_cr.generation_id)
 
         personal_brand_plan, pb_cr = generate_personal_brand_plan(analysis, metadata, transcript_text)
-        costs.add("personal_brand", pb_cr.model, pb_cr.prompt_tokens, pb_cr.completion_tokens, pb_cr.cost_usd)
+        costs.add("personal_brand", pb_cr.model, pb_cr.prompt_tokens, pb_cr.completion_tokens, pb_cr.cost_usd, pb_cr.generation_id)
 
         result = PipelineResult(
             reel_id=reel_id,
@@ -619,10 +644,12 @@ async def _handle_generate_anyway(reel_id: str, query) -> None:
         if personal_brand_plan and personal_brand_plan.tasks:
             personal_brand_line = f"\nDDB personal brand: {len(personal_brand_plan.tasks)} tasks ({personal_brand_plan.total_estimated_hours:.1f}h)"
 
+        # Resolve actual costs from OpenRouter
+        costs.resolve_actual_costs()
+
         cost_line = ""
         if costs.calls:
-            details = ", ".join(f"{c.step} ${c.cost_usd:.3f}" for c in costs.calls)
-            cost_line = f"\n\nEst\\. cost: ${costs.total_cost_usd:.3f} ({details})"
+            cost_line = _format_cost_line(costs)
 
         summary = (
             f"*{_esc(plan.title)}*\n"

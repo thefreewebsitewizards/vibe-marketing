@@ -116,20 +116,49 @@ class LLMCallCost(BaseModel):
     prompt_tokens: int = 0
     completion_tokens: int = 0
     cost_usd: float = 0.0
+    generation_id: str = ""
+    actual_cost_usd: float | None = None
 
 
 class CostBreakdown(BaseModel):
     calls: list[LLMCallCost] = []
     total_cost_usd: float = 0.0
+    total_actual_cost_usd: float | None = None
 
-    def add(self, step: str, model: str, prompt_tokens: int, completion_tokens: int, cost_usd: float):
+    def add(
+        self,
+        step: str,
+        model: str,
+        prompt_tokens: int,
+        completion_tokens: int,
+        cost_usd: float,
+        generation_id: str = "",
+    ):
         self.calls.append(LLMCallCost(
             step=step, model=model,
             prompt_tokens=prompt_tokens,
             completion_tokens=completion_tokens,
             cost_usd=cost_usd,
+            generation_id=generation_id,
         ))
         self.total_cost_usd = sum(c.cost_usd for c in self.calls)
+
+    def resolve_actual_costs(self):
+        """Fetch actual costs from OpenRouter for all calls with generation IDs."""
+        from src.services.llm import fetch_generation_cost
+
+        any_resolved = False
+        for call in self.calls:
+            if call.generation_id and call.actual_cost_usd is None:
+                result = fetch_generation_cost(call.generation_id)
+                if result and result["total_cost"] is not None:
+                    call.actual_cost_usd = result["total_cost"]
+                    any_resolved = True
+
+        if any_resolved:
+            actual_costs = [c.actual_cost_usd for c in self.calls if c.actual_cost_usd is not None]
+            if actual_costs:
+                self.total_actual_cost_usd = sum(actual_costs)
 
 
 class PipelineResult(BaseModel):

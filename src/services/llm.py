@@ -1,9 +1,11 @@
 """Thin LLM wrapper — routes to OpenRouter (OpenAI-compat) or direct Anthropic."""
 
 import base64
+import time
 from dataclasses import dataclass, field
 from openai import OpenAI
 from loguru import logger
+import httpx
 
 from src.config import settings
 
@@ -30,6 +32,7 @@ class ChatResult:
     total_tokens: int = 0
     cost_usd: float = 0.0
     finish_reason: str = ""
+    generation_id: str = ""
 
 
 def estimate_cost(model: str, prompt_tokens: int, completion_tokens: int) -> float:
@@ -130,6 +133,9 @@ def chat(
 
     cost = estimate_cost(model, prompt_tokens, completion_tokens)
 
+    # Capture OpenRouter generation ID for actual cost lookup
+    generation_id = getattr(response, "id", "") or ""
+
     return ChatResult(
         text=text,
         model=model,
@@ -138,4 +144,45 @@ def chat(
         total_tokens=total_tokens,
         cost_usd=cost,
         finish_reason=finish_reason,
+        generation_id=generation_id,
     )
+
+
+def fetch_generation_cost(generation_id: str, retries: int = 3) -> dict | None:
+    """Fetch actual cost from OpenRouter's generation API.
+
+    OpenRouter may take a moment to finalize cost data, so we retry with backoff.
+
+    Returns:
+        Dict with keys: total_cost, tokens_prompt, tokens_completion,
+        native_tokens_prompt, native_tokens_completion, model.
+        None if lookup fails.
+    """
+    if not generation_id or not settings.openrouter_api_key:
+        return None
+
+    url = f"https://openrouter.ai/api/v1/generation?id={generation_id}"
+    headers = {"Authorization": f"Bearer {settings.openrouter_api_key}"}
+
+    for attempt in range(retries):
+        try:
+            resp = httpx.get(url, headers=headers, timeout=10)
+            if resp.status_code == 200:
+                data = resp.json().get("data", {})
+                if data.get("total_cost") is not None:
+                    return {
+                        "total_cost": float(data["total_cost"]),
+                        "tokens_prompt": data.get("tokens_prompt", 0),
+                        "tokens_completion": data.get("tokens_completion", 0),
+                        "native_tokens_prompt": data.get("native_tokens_prompt", 0),
+                        "native_tokens_completion": data.get("native_tokens_completion", 0),
+                        "model": data.get("model", ""),
+                    }
+            if attempt < retries - 1:
+                time.sleep(1 * (attempt + 1))
+        except httpx.HTTPError as e:
+            logger.debug(f"OpenRouter generation lookup failed (attempt {attempt + 1}): {e}")
+            if attempt < retries - 1:
+                time.sleep(1 * (attempt + 1))
+
+    return None
