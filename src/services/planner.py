@@ -78,7 +78,7 @@ Rules:
         return SimilarityResult(), chat_result
 
 
-def generate_plan(analysis: AnalysisResult, metadata: ReelMetadata) -> tuple[ImplementationPlan, ChatResult]:
+def generate_plan(analysis: AnalysisResult, metadata: ReelMetadata, user_context: str = "") -> tuple[ImplementationPlan, ChatResult]:
     """Generate an implementation plan from the analysis using an LLM."""
 
     existing_plans = get_past_plan_summaries(limit=10)
@@ -96,6 +96,7 @@ def generate_plan(analysis: AnalysisResult, metadata: ReelMetadata) -> tuple[Imp
     system_prompt, user_prompt = build_plan_prompt(
         analysis, metadata, existing_plans, script_context, script_section_ids,
         capabilities_context=capabilities,
+        user_context=user_context,
     )
 
     logger.info("Generating implementation plan...")

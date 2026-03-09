@@ -15,6 +15,7 @@ class PlanStatus(str, Enum):
 
 class ReelRequest(BaseModel):
     reel_url: str
+    context: str = ""  # Optional user notes about what to focus on
 
 
 class ReelMetadata(BaseModel):

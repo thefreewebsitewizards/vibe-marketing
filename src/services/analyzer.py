@@ -33,13 +33,14 @@ def analyze_reel(
     transcript: TranscriptResult,
     metadata: ReelMetadata,
     frame_paths: list[Path] | None = None,
+    user_context: str = "",
 ) -> tuple[AnalysisResult, ChatResult]:
     """Analyze a reel transcript (+ optional video frames) with an LLM for business insights."""
 
     if frame_paths:
         logger.info(f"Sending transcript + {len(frame_paths)} frames for vision analysis...")
         system_prompt, user_content = build_vision_analysis_prompt(
-            transcript, metadata, frame_paths
+            transcript, metadata, frame_paths, user_context=user_context
         )
         # Convert Anthropic-style vision blocks to OpenAI-style
         image_blocks = _frames_to_openai_content(frame_paths)
@@ -48,7 +49,7 @@ def analyze_reel(
         openai_content = image_blocks + [text_block]
     else:
         logger.info("Sending transcript for analysis (no frames)...")
-        system_prompt, user_prompt = build_analysis_prompt(transcript, metadata)
+        system_prompt, user_prompt = build_analysis_prompt(transcript, metadata, user_context=user_context)
         openai_content = user_prompt
 
     chat_result = chat(system=system_prompt, user_content=openai_content, max_tokens=8192, model_override=get_model_for_step("analysis"))
@@ -144,12 +145,13 @@ def analyze_carousel(
     ocr_text: str,
     metadata: ReelMetadata,
     image_paths: list[Path],
+    user_context: str = "",
 ) -> tuple[AnalysisResult, ChatResult]:
     """Analyze a carousel post (images + OCR text) with an LLM."""
     logger.info(f"Sending {len(image_paths)} carousel images for analysis...")
 
     system_prompt, user_content = build_carousel_analysis_prompt(
-        ocr_text, metadata, image_paths
+        ocr_text, metadata, image_paths, user_context=user_context
     )
     # Convert to OpenAI-style content blocks
     image_blocks = _frames_to_openai_content(image_paths)

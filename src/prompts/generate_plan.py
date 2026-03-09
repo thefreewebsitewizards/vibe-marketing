@@ -141,6 +141,7 @@ def build_plan_prompt(
     script_context: str = "",
     script_section_ids: str = "",
     capabilities_context: str = "",
+    user_context: str = "",
 ) -> tuple[str, str]:
     insights_formatted = "\n".join(f"- {i}" for i in analysis.key_insights)
     phrases_formatted = "\n".join(f"- {p}" for p in analysis.swipe_phrases) if analysis.swipe_phrases else "- None extracted"
@@ -189,6 +190,9 @@ def build_plan_prompt(
             script_content=script_context,
             section_ids=script_section_ids,
         )
+
+    if user_context:
+        user_prompt += f"\n\n**User notes (prioritize this direction):**\n{user_context}"
 
     feedback_context = get_feedback_context()
     if feedback_context:

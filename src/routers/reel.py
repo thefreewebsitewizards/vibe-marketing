@@ -181,7 +181,7 @@ def _notify_similarity_telegram(
         logger.error(f"Failed to send similarity notification: {e}")
 
 
-def _run_pipeline(reel_id: str, reel_url: str) -> None:
+def _run_pipeline(reel_id: str, reel_url: str, user_context: str = "") -> None:
     """Run the full pipeline in a background thread."""
     try:
         logger.info(f"Background pipeline started for {reel_id}")
@@ -196,13 +196,13 @@ def _run_pipeline(reel_id: str, reel_url: str) -> None:
             image_paths = download_result
             ocr_text = extract_text_from_images(image_paths)
             transcript = TranscriptResult(text=ocr_text, language="en")
-            analysis, analysis_cr = analyze_carousel(ocr_text, metadata, image_paths)
+            analysis, analysis_cr = analyze_carousel(ocr_text, metadata, image_paths, user_context=user_context)
         else:
             video_path = download_result
             audio_path = extract_audio(video_path, temp_dir)
             frame_paths = extract_keyframes(video_path, temp_dir)
             transcript = transcribe(audio_path)
-            analysis, analysis_cr = analyze_reel(transcript, metadata, frame_paths)
+            analysis, analysis_cr = analyze_reel(transcript, metadata, frame_paths, user_context=user_context)
         costs.add("analysis", analysis_cr.model, analysis_cr.prompt_tokens, analysis_cr.completion_tokens, analysis_cr.cost_usd)
 
         similarity, sim_cr = check_plan_similarity(analysis)
@@ -218,7 +218,7 @@ def _run_pipeline(reel_id: str, reel_url: str) -> None:
             cleanup_temp_dir(reel_id)
             return
 
-        plan, plan_cr = generate_plan(analysis, metadata)
+        plan, plan_cr = generate_plan(analysis, metadata, user_context=user_context)
         costs.add("plan", plan_cr.model, plan_cr.prompt_tokens, plan_cr.completion_tokens, plan_cr.cost_usd)
 
         repurposing_plan, rep_cr = generate_repurposing_plan(analysis, metadata, transcript.text)
@@ -277,7 +277,7 @@ def process_reel(request: ReelRequest) -> dict:
 
     thread = threading.Thread(
         target=_run_pipeline,
-        args=(reel_id, request.reel_url),
+        args=(reel_id, request.reel_url, request.context),
         daemon=True,
         name=f"pipeline-{reel_id}",
     )

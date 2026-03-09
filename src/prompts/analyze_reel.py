@@ -224,7 +224,7 @@ Apply the same rules as reel analysis for insights, applications, and swipe phra
 
 
 def build_analysis_prompt(
-    transcript: TranscriptResult, metadata: ReelMetadata
+    transcript: TranscriptResult, metadata: ReelMetadata, user_context: str = ""
 ) -> tuple[str, str]:
     user_prompt = USER_TEMPLATE.format(
         creator=metadata.creator or "Unknown",
@@ -232,6 +232,9 @@ def build_analysis_prompt(
         duration=metadata.duration,
         text=transcript.text,
     )
+
+    if user_context:
+        user_prompt += f"\n\n**User notes (prioritize this direction):**\n{user_context}"
 
     feedback_context = get_analysis_feedback_context()
     if feedback_context:
@@ -246,6 +249,7 @@ def build_carousel_analysis_prompt(
     ocr_text: str,
     metadata: ReelMetadata,
     image_paths: list[Path],
+    user_context: str = "",
 ) -> tuple[str, list]:
     """Build a multimodal prompt for carousel analysis (images + OCR text)."""
     system = SYSTEM_PROMPT + "\n\nYou are analyzing a carousel post (multiple images), not a video. There is no transcript — analyze the image content and OCR text directly."
@@ -258,6 +262,9 @@ def build_carousel_analysis_prompt(
         slide_count=len(image_paths),
         text=ocr_text or "No text extracted from images",
     )
+
+    if user_context:
+        text_prompt += f"\n\n**User notes (prioritize this direction):**\n{user_context}"
 
     feedback_context = get_analysis_feedback_context()
     if feedback_context:
@@ -273,6 +280,7 @@ def build_vision_analysis_prompt(
     transcript: TranscriptResult,
     metadata: ReelMetadata,
     frame_paths: list[Path],
+    user_context: str = "",
 ) -> tuple[str, list]:
     """Build a multimodal prompt with frames + transcript for Claude vision."""
     system = SYSTEM_PROMPT + VISION_ADDENDUM
@@ -285,6 +293,9 @@ def build_vision_analysis_prompt(
         duration=metadata.duration,
         text=transcript.text,
     ) + VISION_USER_ADDENDUM
+
+    if user_context:
+        text_prompt += f"\n\n**User notes (prioritize this direction):**\n{user_context}"
 
     feedback_context = get_analysis_feedback_context()
     if feedback_context:
