@@ -1,4 +1,4 @@
-# Session Handoff — 2026-03-11 (Session 11)
+# Session Handoff — 2026-03-11 (Session 12)
 
 ## Project Overview
 - Instagram Reel -> Business Strategy Pipeline (FastAPI + Telegram bot + OpenRouter LLM)
@@ -6,69 +6,61 @@
 
 ## Completed This Session
 
-### 1. Frame resize for token reduction (commit `5c44aaa`)
-- Changed keyframe scale from `1280:-2` to `512:-2` in `src/services/frames.py:33`
-- Expected ~4x reduction in vision token usage
+### E2E execution tested and verified:
+- Approved a local plan → executor thread fired in background
+- Auto task (sales_script) ran and completed via handler
+- Human tasks correctly flagged as `needs_human`
+- External agent flow tested: `PATCH /plans/{id}/tasks/{index}` updates execution log
+- n8n webhook fired on approval (`N8N_EXECUTION_WEBHOOK`)
+- Plan status transitions: review → approved → in_progress (correct lifecycle)
 
-### 2. Relevance score calibration (commit `5c44aaa`)
-- Added scoring guide to analysis prompt: 0.85-0.95 baseline since user pre-filters
-- Updated relevance badge colors: green >= 0.85, yellow >= 0.70, red below
+### GitHub Actions auto-deploy:
+- Created `.github/workflows/deploy.yml` — triggers Coolify build on push to main
+- Coolify branch updated from `deploy` → `main` (no more deploy branch needed)
+- `COOLIFY_API_TOKEN` added as GitHub repo secret
+- Deploy script updated to push to `main` instead of `main:deploy`
+- Workflow: push to main → GitHub Action → Coolify API → build + poll + health check
 
-### 3. Markdown rendering in view.html (commit `5c44aaa`)
-- `_md_to_html()` in plan_writer.py converts **bold**, *italic*, `code`, lists, line breaks
-- Applied to task descriptions, summaries, insights, notes, deliverables
+### OpenClaw/n8n integration:
+- `N8N_EXECUTION_WEBHOOK=https://n8n.leadneedleai.com/webhook/plan-approved` set in master.env + .env
+- On plan approval, ReelBot POSTs `{reel_id, plan_dir}` to n8n webhook
+- Verified webhook fires in e2e test
 
-### 4. Real execution handlers (commit `14cc2d4`)
-- `sales_script`: extracts section_id from tool_data or regex, calls update_section()
-- `content` (meta_ads, email, social): saves drafts to plan/drafts/ directory
-- `n8n`: saves workflow specs to plan/drafts/
-- `claude_code`: logs for future Claude Code execution
-- Added `tool_data` field to PlanTask model for structured automation data
-- Updated plan prompt to instruct LLM to populate tool_data
-- Dispatch table `_TOOL_HANDLERS` for clean routing
+### Previous session work (still deployed):
+- Execution handlers: sales_script (auto), content drafts (auto), n8n specs (auto)
+- Task-level API for agents: GET /plans/{id}/tasks, PATCH /plans/{id}/tasks/{index}
+- Actual costs resolved from OpenRouter before writing plan artifacts
+- 61 tests passing
 
-### 5. Coolify deploy fixed (commit `7ed9c6b`)
-- Discovered Coolify API works with existing token
-- Created `scripts/deploy.sh` — pushes to deploy branch + triggers Coolify API
-- Set `manual_webhook_secret_github: reelbot-deploy-2026` via API
-- No more manual SSH needed for deploys
-
-### 6. Production deploy triggered
-- Pushed 3 commits to main + deploy branches
-- Coolify build queued (deployment: `u2ew7lk9mwhd7culyjlihwc0`)
-
-## Tests
-- 61 tests passing (up from 45 at start of session 9)
-
-## Key Decisions
-- **Coolify API for deploys** — `scripts/deploy.sh` replaces manual SSH workflow
-- **Structured tool_data** in plans — LLM provides machine-readable data for automated execution
-- **Handler dispatch table** — easy to add new tool handlers without modifying core logic
+## Execution flow for Claude Code / OpenClaw:
+```
+1. GET /plans/approved → list approved plans
+2. GET /plans/{id}/tasks → get tasks with status
+3. For each pending task:
+   - Read tool_data for structured instructions
+   - Execute (update script section, write code, create content)
+   - PATCH /plans/{id}/tasks/{index} with {status: "completed", notes: "..."}
+4. Plan auto-completes when all auto tasks are done
+```
 
 ## Priority Next Steps
 
-### 1. Verify production deploy succeeded
-- Check deployment status via Coolify API
-- Test health endpoint and process a reel to verify changes
-
-### 2. GitHub webhook for auto-deploy
-- Webhook secret is set (`reelbot-deploy-2026`)
-- Need to configure GitHub webhook in repo settings pointing to Coolify webhook URL
-- This would enable push-to-deploy without running deploy.sh
-
-### 3. Test execution handlers end-to-end
+### 1. Deploy and test in production
+- Push to main to trigger first GitHub Actions deploy
 - Approve one of the 11 review plans on production
-- Verify sales_script handler works with real tool_data
-- Check that content drafts get saved properly
+- Verify n8n receives webhook POST
 
-### 4. Content execution improvements
-- Code tasks (`claude_code`) are just logged — could integrate with Claude API for simple tasks
-- Website/GHL tasks still need human intervention
+### 2. Create n8n workflow for plan-approved webhook
+- Webhook trigger at `https://n8n.leadneedleai.com/webhook/plan-approved`
+- Should route to OpenClaw (Discord notification or direct execution)
+- Payload: `{reel_id, plan_dir}` → fetch tasks → dispatch
+
+### 3. Production monitoring
+- Check execution logs after approval
+- Verify Telegram notifications work for human tasks
 
 ## Context Notes
-- Venv is at `venv/` (not `.venv/`)
-- Deploy: `./scripts/deploy.sh` (or `bash scripts/deploy.sh`)
-- Coolify API token: in master.env as COOLIFY_API_TOKEN
-- Coolify app UUID: `l0g48c8g4wsskc40co4kssc8`
-- Webhook secret: `reelbot-deploy-2026`
+- Deploy: `./scripts/deploy.sh` or just push to main (GitHub Actions)
+- Coolify app UUID: `l0g48c8g4wsskc40co4kssc8`, branch: `main`
+- n8n webhook: `https://n8n.leadneedleai.com/webhook/plan-approved`
 - 61 tests passing locally

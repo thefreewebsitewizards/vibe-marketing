@@ -19,9 +19,9 @@ fi
 COOLIFY_URL="https://coolify.leadneedleai.com"
 APP_UUID="l0g48c8g4wsskc40co4kssc8"
 
-# Push to deploy branch
-echo "Pushing to deploy branch..."
-git push origin main:deploy
+# Push to main (Coolify watches main directly)
+echo "Pushing to origin..."
+git push origin main
 
 # Trigger Coolify build
 echo "Triggering Coolify deploy..."

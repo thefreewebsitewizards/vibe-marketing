@@ -1,0 +1,74 @@
+name: Deploy to Coolify
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Trigger Coolify build
+        id: trigger
+        run: |
+          RESPONSE=$(curl -s -X GET \
+            -H "Authorization: Bearer ${{ secrets.COOLIFY_API_TOKEN }}" \
+            "https://coolify.leadneedleai.com/api/v1/deploy?uuid=l0g48c8g4wsskc40co4kssc8")
+
+          DEPLOY_UUID=$(echo "$RESPONSE" | python3 -c "import json,sys; print(json.load(sys.stdin)['deployments'][0]['deployment_uuid'])" 2>/dev/null)
+
+          if [ -z "$DEPLOY_UUID" ]; then
+            echo "Failed to trigger deploy: $RESPONSE"
+            exit 1
+          fi
+
+          echo "deploy_uuid=$DEPLOY_UUID" >> "$GITHUB_OUTPUT"
+          echo "Triggered deploy: $DEPLOY_UUID"
+
+      - name: Poll deployment status
+        run: |
+          DEPLOY_UUID="${{ steps.trigger.outputs.deploy_uuid }}"
+          MAX_ATTEMPTS=40
+          POLL_INTERVAL=15
+
+          for attempt in $(seq 1 $MAX_ATTEMPTS); do
+            sleep $POLL_INTERVAL
+
+            STATUS=$(curl -s -X GET \
+              -H "Authorization: Bearer ${{ secrets.COOLIFY_API_TOKEN }}" \
+              "https://coolify.leadneedleai.com/api/v1/deployments?filter=l0g48c8g4wsskc40co4kssc8" \
+              | python3 -c "
+          import json, sys
+          for d in json.load(sys.stdin):
+              if d.get('deployment_uuid') == '$DEPLOY_UUID':
+                  print(d['status'])
+                  break
+          " 2>/dev/null || echo "unknown")
+
+            elapsed=$((attempt * POLL_INTERVAL))
+            echo "[$elapsed s] Status: $STATUS"
+
+            case "$STATUS" in
+              finished)
+                echo "Deploy succeeded in ${elapsed}s"
+                sleep 5
+                HEALTH=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 \
+                  "https://reelbot.leadneedleai.com/health")
+                if [ "$HEALTH" = "200" ]; then
+                  echo "Health check passed"
+                  exit 0
+                else
+                  echo "WARNING: Health check returned HTTP $HEALTH"
+                  exit 1
+                fi
+                ;;
+              failed)
+                echo "Deploy failed after ${elapsed}s"
+                exit 1
+                ;;
+            esac
+          done
+
+          echo "Deploy timed out after $((MAX_ATTEMPTS * POLL_INTERVAL))s"
+          exit 1
