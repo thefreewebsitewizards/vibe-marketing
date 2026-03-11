@@ -359,14 +359,14 @@ def _render_plan_html(result: PipelineResult) -> str:
                 f'<div class="card" style="border-left: 3px solid {color};">'
                 f'<span class="badge" style="background:{color};">{ba.urgency.upper()}</span> '
                 f'<strong>{_html_esc(ba.area)}</strong> <em>({_html_esc(ba.target_system)})</em>'
-                f'<p>{_html_esc(ba.recommendation)}</p></div>'
+                f'<p>{_md_to_html(ba.recommendation)}</p></div>'
             )
 
     # Key insights HTML
-    insights_html = "".join(f"<li>{_html_esc(i)}</li>" for i in analysis.key_insights)
+    insights_html = "".join(f"<li>{_md_to_html(i)}</li>" for i in analysis.key_insights)
 
     # Swipe phrases HTML
-    phrases_html = "".join(f"<li>{_html_esc(p)}</li>" for p in analysis.swipe_phrases) if analysis.swipe_phrases else "<li>None extracted</li>"
+    phrases_html = "".join(f"<li>{_md_to_html(p)}</li>" for p in analysis.swipe_phrases) if analysis.swipe_phrases else "<li>None extracted</li>"
 
     # Fact checks HTML
     fact_checks_html = ""
@@ -395,7 +395,7 @@ def _render_plan_html(result: PipelineResult) -> str:
             f'<h3>{i}. {_html_esc(task.title)}{human_badge}</h3>'
             f'<p class="task-meta">{_html_esc(task.priority)} &middot; {task.estimated_hours:.1f}h &middot; {_html_esc(", ".join(task.tools))}</p>'
             f'{human_reason}'
-            f'<p>{_html_esc(task.description)}</p>'
+            f'<div class="task-desc">{_md_to_html(task.description)}</div>'
             f'{"<ul>" + deliverables + "</ul>" if deliverables else ""}'
             f'{deps}'
             f'</div>'
@@ -405,15 +405,15 @@ def _render_plan_html(result: PipelineResult) -> str:
     repurposing_html = ""
     if result.repurposing_plan:
         rp = result.repurposing_plan
-        repurposing_html += f'<h2>Content Repurposing Guide</h2><p>{_html_esc(rp.summary)}</p>'
+        repurposing_html += f'<h2>Content Repurposing Guide</h2><p>{_md_to_html(rp.summary)}</p>'
         for i, task in enumerate(rp.tasks, 1):
             human_badge = ' <span class="badge" style="background:#ef4444;">NEEDS HUMAN</span>' if task.requires_human else ""
-            deliverables = "".join(f"<li>{_html_esc(d)}</li>" for d in task.deliverables)
+            deliverables = "".join(f"<li>{_md_to_html(d)}</li>" for d in task.deliverables)
             repurposing_html += (
                 f'<div class="task">'
                 f'<h3>{i}. {_html_esc(task.title)}{human_badge}</h3>'
                 f'<p class="task-meta">{_html_esc(task.priority)} &middot; {task.estimated_hours:.1f}h</p>'
-                f'<p>{_html_esc(task.description)}</p>'
+                f'<div class="task-desc">{_md_to_html(task.description)}</div>'
                 f'{"<ul>" + deliverables + "</ul>" if deliverables else ""}'
                 f'</div>'
             )
@@ -422,15 +422,15 @@ def _render_plan_html(result: PipelineResult) -> str:
     personal_brand_html = ""
     if result.personal_brand_plan:
         pb = result.personal_brand_plan
-        personal_brand_html += f'<h2>Dylan Does Business — Personal Brand Plan</h2><p>{_html_esc(pb.summary)}</p>'
+        personal_brand_html += f'<h2>Dylan Does Business — Personal Brand Plan</h2><p>{_md_to_html(pb.summary)}</p>'
         for i, task in enumerate(pb.tasks, 1):
             human_badge = ' <span class="badge" style="background:#ef4444;">NEEDS HUMAN</span>' if task.requires_human else ""
-            deliverables = "".join(f"<li>{_html_esc(d)}</li>" for d in task.deliverables)
+            deliverables = "".join(f"<li>{_md_to_html(d)}</li>" for d in task.deliverables)
             personal_brand_html += (
                 f'<div class="task">'
                 f'<h3>{i}. {_html_esc(task.title)}{human_badge}</h3>'
                 f'<p class="task-meta">{_html_esc(task.priority)} &middot; {task.estimated_hours:.1f}h</p>'
-                f'<p>{_html_esc(task.description)}</p>'
+                f'<div class="task-desc">{_md_to_html(task.description)}</div>'
                 f'{"<ul>" + deliverables + "</ul>" if deliverables else ""}'
                 f'</div>'
             )
@@ -456,11 +456,11 @@ def _render_plan_html(result: PipelineResult) -> str:
     notes_html = ""
     if notes.what_it_is or notes.how_useful:
         if notes.what_it_is:
-            notes_html += f"<p><strong>What it is:</strong> {_html_esc(notes.what_it_is)}</p>"
+            notes_html += f"<p><strong>What it is:</strong> {_md_to_html(notes.what_it_is)}</p>"
         if notes.how_useful:
-            notes_html += f"<p><strong>How it helps us:</strong> {_html_esc(notes.how_useful)}</p>"
+            notes_html += f"<p><strong>How it helps us:</strong> {_md_to_html(notes.how_useful)}</p>"
         if notes.how_not_useful:
-            notes_html += f"<p><strong>Limitations:</strong> {_html_esc(notes.how_not_useful)}</p>"
+            notes_html += f"<p><strong>Limitations:</strong> {_md_to_html(notes.how_not_useful)}</p>"
         if notes.target_audience:
             notes_html += f"<p><strong>Who should see this:</strong> {_html_esc(notes.target_audience)}</p>"
 
@@ -470,7 +470,7 @@ def _render_plan_html(result: PipelineResult) -> str:
 
     # Relevance badge color
     score = analysis.relevance_score
-    relevance_color = "#22c55e" if score >= 0.7 else "#f59e0b" if score >= 0.4 else "#94a3b8"
+    relevance_color = "#22c55e" if score >= 0.85 else "#f59e0b" if score >= 0.70 else "#ef4444"
 
     # Cost breakdown HTML
     cost_html = ""
@@ -499,7 +499,7 @@ def _render_plan_html(result: PipelineResult) -> str:
         "{{relevance_score}}": f"{score:.0%}",
         "{{relevance_color}}": relevance_color,
         "{{business_impact}}": _html_esc(analysis.business_impact) if analysis.business_impact else "",
-        "{{summary}}": _html_esc(plan.summary),
+        "{{summary}}": _md_to_html(plan.summary),
         "{{video_breakdown_html}}": video_breakdown_html,
         "{{notes_html}}": notes_html,
         "{{applications_html}}": applications_html,
@@ -570,6 +570,63 @@ def _html_esc(text: str) -> str:
         .replace('"', "&quot;")
         .replace("'", "&#x27;")
     )
+
+
+def _md_to_html(text: str) -> str:
+    """Convert basic markdown to HTML for plan view rendering.
+
+    Handles: **bold**, *italic*, `code`, line breaks, and bullet lists.
+    Escapes HTML first for safety, then applies markdown conversion.
+    """
+    import re
+
+    if not text:
+        return ""
+
+    escaped = _html_esc(text)
+
+    # Bold: **text**
+    escaped = re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', escaped)
+    # Italic: *text* (but not inside <strong> tags)
+    escaped = re.sub(r'(?<!</strong>)\*(.+?)\*', r'<em>\1</em>', escaped)
+    # Inline code: `text`
+    escaped = re.sub(r'`(.+?)`', r'<code>\1</code>', escaped)
+
+    # Split into lines for block-level processing
+    lines = escaped.split('\n')
+    result_lines = []
+    in_list = False
+
+    for line in lines:
+        stripped = line.strip()
+
+        # Bullet list item: - text
+        if stripped.startswith('- '):
+            if not in_list:
+                result_lines.append('<ul>')
+                in_list = True
+            result_lines.append(f'<li>{stripped[2:]}</li>')
+        else:
+            if in_list:
+                result_lines.append('</ul>')
+                in_list = False
+
+            if stripped:
+                result_lines.append(f'{stripped}<br>')
+            else:
+                result_lines.append('<br>')
+
+    if in_list:
+        result_lines.append('</ul>')
+
+    # Clean up trailing <br> before </ul>
+    html = '\n'.join(result_lines)
+    html = html.replace('<br>\n<ul>', '\n<ul>')
+    # Remove double <br> at end
+    if html.endswith('<br>'):
+        html = html[:-4]
+
+    return html
 
 
 def _update_index(result: PipelineResult, plan_dir_name: str, *, routed_to: str = "") -> None:

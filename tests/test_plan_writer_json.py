@@ -1,10 +1,12 @@
 import json
+import pytest
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 from src.models import (
     PipelineResult, PlanStatus, ReelMetadata, TranscriptResult,
     AnalysisResult, ImplementationPlan, PlanTask,
 )
+from src.utils.plan_writer import _md_to_html, _html_esc
 
 
 def _make_result() -> PipelineResult:
@@ -41,6 +43,36 @@ def _make_result() -> PipelineResult:
             total_estimated_hours=3.0,
         ),
     )
+
+
+class TestMdToHtml:
+    def test_should_convert_bold(self):
+        assert "<strong>bold</strong>" in _md_to_html("**bold** text")
+
+    def test_should_convert_italic(self):
+        assert "<em>italic</em>" in _md_to_html("*italic* text")
+
+    def test_should_convert_inline_code(self):
+        assert "<code>code</code>" in _md_to_html("`code` here")
+
+    def test_should_convert_bullet_list(self):
+        result = _md_to_html("- item one\n- item two")
+        assert "<ul>" in result
+        assert "<li>item one</li>" in result
+        assert "<li>item two</li>" in result
+
+    def test_should_escape_html_before_converting(self):
+        result = _md_to_html("**<script>alert(1)</script>**")
+        assert "<script>" not in result
+        assert "&lt;script&gt;" in result
+
+    def test_should_handle_empty_string(self):
+        assert _md_to_html("") == ""
+        assert _md_to_html(None) == ""
+
+    def test_should_convert_line_breaks(self):
+        result = _md_to_html("line one\nline two")
+        assert "<br>" in result
 
 
 def test_write_plan_saves_plan_json(tmp_path):

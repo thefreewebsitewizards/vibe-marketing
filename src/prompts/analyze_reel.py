@@ -104,6 +104,15 @@ Return JSON:
   ]
 }}
 
+Rules for relevance_score — CALIBRATION GUIDE (the user pre-filters reels, so most will be relevant):
+- 0.95-1.0 = Directly actionable TODAY with our exact stack/clients. Clear ROI, specific tools we already use
+- 0.90-0.94 = Highly relevant strategy or technique we should implement this week
+- 0.85-0.89 = Useful with some adaptation — good idea but needs tweaking for our context
+- 0.80-0.84 = Tangentially relevant — interesting but lower priority, might be useful later
+- Below 0.80 = Only use this for genuinely off-topic content (rare since user pre-filters)
+- Default expectation: most reels should score 0.85-0.95. Scoring below 0.80 means the content has almost nothing to do with our business
+- DO NOT give low scores just because the advice is "common" or "basic" — if it applies to us and is actionable, score it high
+
 Rules for routing_target — pick the SINGLE best folder for this reel's content:
 - "claude-upgrades" = AI tool improvements, Claude/LLM workflow upgrades, prompt engineering
 - "ddb" = Dylan Does Business — social media content, personal brand, content creation
@@ -243,7 +252,7 @@ Rules for routing_target — pick the SINGLE best folder for this carousel's con
 - "aias" = AI appointment setting — AI chatbots, conversational AI, booking flows
 - If the carousel spans multiple areas, pick the PRIMARY one that best matches the core topic
 
-Apply the same rules as reel analysis for insights, applications, and swipe phrases."""
+Apply the same rules as reel analysis for insights, applications, swipe phrases, and relevance_score calibration (most should be 0.85-0.95)."""
 
 
 def build_analysis_prompt(

@@ -30,7 +30,7 @@ def extract_keyframes(video_path: Path, output_dir: Path, max_frames: int = 8) -
     cmd = [
         "ffmpeg",
         "-i", str(video_path),
-        "-vf", f"fps=1/{interval:.1f},scale=1280:-2",
+        "-vf", f"fps=1/{interval:.1f},scale=512:-2",
         "-frames:v", str(max_frames),
         "-q:v", "3",
         "-y",
