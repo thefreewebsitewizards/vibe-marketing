@@ -67,9 +67,10 @@ def _format_cost_line(costs: CostBreakdown) -> str:
     """Format cost breakdown for Telegram message."""
     lines = []
     for c in costs.calls:
-        model_short = c.model.split("/")[-1] if c.model else "?"
+        step = _esc(c.step)
+        model_short = _esc(c.model.split("/")[-1]) if c.model else "?"
         actual = f" → ${c.actual_cost_usd:.4f}" if c.actual_cost_usd is not None else ""
-        lines.append(f"  {c.step}: ${c.cost_usd:.4f}{actual} ({model_short}, {c.prompt_tokens + c.completion_tokens:,}tok)")
+        lines.append(f"  {step}: ${c.cost_usd:.4f}{actual} ({model_short}, {c.prompt_tokens + c.completion_tokens:,}tok)")
 
     detail_text = "\n".join(lines)
 
