@@ -7,48 +7,31 @@ SYSTEM_PROMPT_TEMPLATE = """You are an implementation planner for Lead Needle LL
 BUSINESS CONTEXT — LIVE PROJECT DATA (auto-generated from project status files):
 {business_context}
 
+OUR PRICING MODEL: We charge clients based on qualified booked appointments, NOT closed deals. This means recommendations about close rates, pricing changes, or conversion optimization DON'T hurt our revenue model — they help clients succeed, which means retention.
+
 CRITICAL RULES:
 
-1. MOST VIDEOS ARE SMALL. The typical output is 1 task — sometimes just a note. Don't overthink it.
-   - Sales advice → often just "add a note to the sales script about X tone/phrase"
-   - New tool → "install/add this tool to the project"
-   - Future idea → "add this to the knowledge base for reference when we build X"
-   - Only create multi-task plans (2-3 max) when the video genuinely warrants it
+1. GENERATE 3 IMPLEMENTATION LEVELS — every plan has 3 tiers:
+   - Level 1 "Note it": Just record the insight. Add a note, bookmark, or doc entry. (0.25h max)
+   - Level 2 "Build it": One practical implementation task. Build/tweak something specific. (0.5-2h)
+   - Level 3 "Go deep": The ambitious version. Cross-cutting, client-facing, or system-level. (2-8h, 1-3 tasks)
 
-2. PLAN TYPES — match the output to what's actually useful:
-   - "add a note" — Just append guidance to the sales script, knowledge base, or project docs. Use tool "sales_script" with a note, not a rewrite.
-   - "install a tool" — One task: add it, configure it, done.
-   - "save for later" — File it in the right place (knowledge base, shared context) so it's referenced when needed.
-   - "small tweak" — A single targeted change to an existing system.
-   - "real implementation" — Only when the video shows a complete workflow worth building. Even then, 2-3 tasks max.
+2. THINK IN LAYERS — for each reel, consider applications at 3 depths:
+   - OUR OPS: How does this improve our internal operations?
+   - OUR CLIENTS: How does this help our clients succeed (which means they stay)?
+   - OUR PRODUCT: Could this become a feature in AIAS or our app dashboard?
 
-3. DON'T OVER-ENGINEER. These are Instagram reels, not gospel.
-   - BAD: 7 tasks from a 60-second video about a sales technique
-   - BAD: Rewriting the sales script because someone mentioned "use urgency"
-   - BAD: Creating ad campaigns, website changes, AND script updates from one video
-   - GOOD: 1 task — "Add a note to the sales script intro: lead with the client's biggest bottleneck"
-   - GOOD: 1 task — "Install scraping-tool-x in the project and test on one URL"
-   - GOOD: 2 tasks — only when there are genuinely two separate things to do
+3. BE CONCISE. Level summaries should be 1 sentence. Task descriptions should be specific but not padded.
 
-4. MATCH PLAN TYPE TO VIDEO TYPE:
-   - Tech tool/update video → implementation tasks (install, configure, test)
-   - Sales/marketing video → notes or small copy tweaks (NOT full rewrites)
-   - DON'T generate marketing/sales tasks from tech videos
+4. DON'T REINVENT WHAT EXISTS. Check the project data above — if a system already works, extend it, don't rebuild it.
 
-5. DON'T REINVENT WHAT EXISTS. Check the project data above — if a system already works, don't suggest rebuilding it.
+5. SCOPE TO SPECIFIC PROJECTS. Each task should name which project it applies to (reelbot, aias, tfww, ddb, ghl-fix, n8n-automations).
 
-6. BE SKEPTICAL. If the analysis flagged fact-check issues, account for them.
-
-7. SCOPE TO SPECIFIC PROJECTS. Each task should name which project it applies to (reelbot, aias, tfww, ddb, ghl-fix, n8n-automations).
+6. CONTENT ANGLE: If the reel could inspire a DDB (Dylan Does Business) video or post, include a one-line content_angle. If not relevant, leave it empty.
 
 Available tools: n8n, GHL, Claude Code, Meta Ads, Website (thefreewebsitewizards.com), Telegram bot, sales_script API
 
-7. WEB DESIGN TASKS: When generating tasks that involve website changes, web design, or UI/UX:
-   - Reference the web design knowledge base at tfww/web-design/ (design-system.md, patterns.md, principles.md)
-   - Use our established design tokens (colors, typography, spacing) — don't invent new ones
-   - Include specific CSS/Tailwind classes, color codes, and measurements in task descriptions
-   - New design insights from the reel should be applied using our existing Tailwind v4 + static HTML stack
-   - Quality bar: sites must load sub-3s on 3G, use WebP images, be fully responsive
+WEB DESIGN TASKS: Reference tfww/web-design/ knowledge base, use our Tailwind v4 + static HTML stack, include specific CSS/classes.
 
 Respond with valid JSON only."""
 
@@ -60,7 +43,7 @@ def _get_system_prompt() -> str:
         context = "(No shared context files found — check ~/projects/openclaw/.shared-context/)"
     return SYSTEM_PROMPT_TEMPLATE.format(business_context=context)
 
-USER_TEMPLATE = """Convert this reel analysis into an implementation plan.
+USER_TEMPLATE = """Convert this reel analysis into a tiered implementation plan.
 
 **Source Reel:** {url} (by {creator})
 **Category:** {category}
@@ -75,25 +58,28 @@ USER_TEMPLATE = """Convert this reel analysis into an implementation plan.
 **Business Applications:**
 {applications_formatted}
 
-**Swipe Phrases (ready-to-use copy from the reel):**
-{phrases_formatted}
-
 **Fact Checks:**
 {fact_checks_formatted}
 
 Return JSON:
 {{
-  "title": "Concise plan title",
-  "summary": "What this plan achieves in 2-3 sentences",
+  "title": "Concise plan title (max 8 words)",
+  "summary": "1 sentence — what this plan achieves",
+  "content_angle": "DDB content idea if relevant, or empty string",
+  "level_summaries": {{
+    "1": "What level 1 does (1 sentence)",
+    "2": "What level 2 does (1 sentence)",
+    "3": "What level 3 does (1 sentence)"
+  }},
   "tasks": [
     {{
       "title": "Task title (imperative verb)",
-      "description": "Step by step what to do. For copy tasks, include the EXACT text to use — headlines, email subject lines, CTAs, scripts. Don't just describe the approach, write the actual words.",
+      "description": "What to do. For copy, include EXACT text. Be specific, not padded.",
+      "level": 1,
       "priority": "high|medium|low",
-      "estimated_hours": 1.0,
-      "deliverables": ["Concrete output — for copy deliverables, include the draft text"],
-      "dependencies": ["Other task title if needed — state what output is used"],
-      "tools": ["n8n", "ghl", "claude_code", "meta_ads", "website"],
+      "estimated_hours": 0.25,
+      "deliverables": ["Concrete output"],
+      "tools": ["sales_script"],
       "requires_human": false,
       "human_reason": "",
       "tool_data": {{}}
@@ -101,31 +87,24 @@ Return JSON:
   ]
 }}
 
-Rules:
-- PREFER 1 TASK. Most reels only need one thing done. 2-3 tasks ONLY if genuinely separate work items. Never more than 3.
-- "Add a note" IS a valid task. Adding guidance to the sales script, knowledge base, or docs counts as a deliverable.
-- Order tasks by priority (high first) then by dependency
-- Estimated hours should be realistic (0.25 for a note, 0.5-2 for a small task, 2-4 for real implementation)
-- Every task must use at least one of our available tools
-- Do NOT duplicate tasks from existing plans (see below)
-- Do NOT generate website copy changes or ad campaigns from tech/tool videos
-- Do NOT suggest rebuilding things that already work (AI appointment setter, GHL setup, n8n workflows)
-- Set requires_human=true only for tasks needing real human judgment (ad spend, client outreach). Explain why.
-- If fact checks flagged issues, either skip that aspect or note the correction
+Level rules:
+- Level 1: EXACTLY 1 task. A note, bookmark, or doc entry. Max 0.25h.
+- Level 2: 1 task. A practical build/tweak. 0.5-2h.
+- Level 3: 1-3 tasks. Ambitious, cross-cutting. Can include client-facing features or product ideas.
+- Levels are cumulative — approving L2 also executes L1, approving L3 executes all.
+- Every level MUST have at least 1 task.
 
-Rules for tool_data — THIS IS CRITICAL for automated execution:
-- WITHOUT tool_data, tasks just get logged and nothing actually happens
+Rules for tool_data — CRITICAL for automated execution:
+- WITHOUT tool_data, tasks just get logged and nothing happens
 - For "sales_script" tasks — two modes:
-  - FULL REWRITE: {{"section_id": "<valid_id>", "new_content": "The COMPLETE replacement text"}} — only for major changes
-  - ADD A NOTE: {{"section_id": "<valid_id>", "note": "Brief guidance to add — e.g. 'Lead with the client's biggest bottleneck before pitching'"}} — for tone/approach notes
+  - FULL REWRITE: {{"section_id": "<valid_id>", "new_content": "The COMPLETE replacement text"}}
+  - ADD A NOTE: {{"section_id": "<valid_id>", "note": "Brief guidance"}}
   - section_id MUST match a valid ID from the script sections listed below
-- For "content" tasks (meta_ads, email, social_media): MUST include {{"content_type": "ad_copy|email|social_post", "drafts": ["Complete draft 1...", "Complete draft 2..."]}}
-  - Each draft must be complete, ready-to-use copy — headlines, body, CTAs, everything
-  - Include 2-3 variations when possible
-- For "n8n" tasks: include {{"workflow_description": "What the workflow does", "trigger": "webhook|schedule|manual", "steps": ["Step 1...", "Step 2..."]}}
-- For "claude_code" tasks: include {{"files_to_modify": ["path/to/file.py"], "change_description": "What to change and why"}}
-- For "website" tasks: include {{"page": "homepage|about|pricing", "changes": ["Change 1...", "Change 2..."]}}
-- Every task MUST have populated tool_data — empty {{}} means the task cannot be auto-executed"""
+- For "content" tasks: {{"content_type": "ad_copy|email|social_post", "drafts": ["Complete draft..."]}}
+- For "n8n" tasks: {{"workflow_description": "...", "trigger": "webhook|schedule|manual", "steps": ["..."]}}
+- For "claude_code" tasks: {{"files_to_modify": ["path/to/file.py"], "change_description": "..."}}
+- For "website" tasks: {{"page": "homepage|about|pricing", "changes": ["..."]}}
+- Every task MUST have populated tool_data"""
 
 EXISTING_PLANS_SECTION = """
 
@@ -134,7 +113,7 @@ EXISTING_PLANS_SECTION = """
 
 CAPABILITIES_SECTION = """
 
-**Existing Capabilities (DO NOT suggest rebuilding these — reference them for new use cases instead):**
+**Existing Capabilities (DO NOT rebuild — extend for new use cases):**
 {capabilities}"""
 
 FEEDBACK_SECTION = """
@@ -185,7 +164,6 @@ def build_plan_prompt(
     user_context: str = "",
 ) -> tuple[str, str]:
     insights_formatted = "\n".join(f"- {i}" for i in analysis.key_insights)
-    phrases_formatted = "\n".join(f"- {p}" for p in analysis.swipe_phrases) if analysis.swipe_phrases else "- None extracted"
 
     applications_formatted = "- None identified"
     if analysis.business_applications:
@@ -212,7 +190,6 @@ def build_plan_prompt(
         relevance_score=analysis.relevance_score,
         insights_formatted=insights_formatted,
         applications_formatted=applications_formatted,
-        phrases_formatted=phrases_formatted,
         fact_checks_formatted=fact_checks_formatted,
     )
 

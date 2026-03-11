@@ -113,6 +113,13 @@ def list_tasks(reel_id: str):
     if not plan_data:
         raise HTTPException(status_code=404, detail="No plan.json found")
 
+    # Check approved level from metadata
+    meta_path = settings.plans_dir / entry["plan_dir"] / "metadata.json"
+    approved_level = None
+    if meta_path.exists():
+        meta = json.loads(meta_path.read_text())
+        approved_level = meta.get("approved_level")
+
     # Load execution log if it exists
     log_path = settings.plans_dir / entry["plan_dir"] / "execution_log.json"
     executed = {}
@@ -123,6 +130,11 @@ def list_tasks(reel_id: str):
 
     tasks = []
     for i, task in enumerate(plan_data.get("tasks", [])):
+        # Filter by approved level (cumulative: L2 includes L1 tasks)
+        task_level = task.get("level", 1)
+        if approved_level and task_level > approved_level:
+            continue
+
         exec_result = executed.get(i)
         task_status = "pending"
         if exec_result:
@@ -139,6 +151,7 @@ def list_tasks(reel_id: str):
             "requires_human": task.get("requires_human", False),
             "priority": task.get("priority", "medium"),
             "deliverables": task.get("deliverables", []),
+            "level": task_level,
             "status": task_status,
             "execution_notes": exec_result.get("notes", "") if exec_result else "",
         })

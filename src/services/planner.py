@@ -117,6 +117,7 @@ def generate_plan(analysis: AnalysisResult, metadata: ReelMetadata, user_context
                 tools=normalize_string_list(t.get("tools") or []),
                 requires_human=bool(t.get("requires_human", False)),
                 human_reason=t.get("human_reason") or "",
+                level=int(t.get("level", 1)),
             ))
 
         plan = ImplementationPlan(
@@ -124,6 +125,8 @@ def generate_plan(analysis: AnalysisResult, metadata: ReelMetadata, user_context
             summary=data.get("summary", ""),
             tasks=tasks,
             total_estimated_hours=sum(t.estimated_hours for t in tasks),
+            content_angle=data.get("content_angle", ""),
+            level_summaries=data.get("level_summaries", {}),
         )
     except (json.JSONDecodeError, IndexError, KeyError) as e:
         logger.warning(f"Failed to parse plan JSON ({e}), creating single-task plan")

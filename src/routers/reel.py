@@ -17,8 +17,6 @@ from src.services.transcriber import transcribe
 from src.services.analyzer import analyze_reel, analyze_carousel
 from src.services.ocr import extract_text_from_images
 from src.services.planner import generate_plan, check_plan_similarity
-from src.services.repurposer import generate_repurposing_plan
-from src.services.personal_brand import generate_personal_brand_plan
 from src.utils.file_ops import create_temp_dir, cleanup_temp_dir
 from src.utils.plan_writer import write_plan
 from src.utils.plan_manager import is_duplicate, get_index, save_index
@@ -222,12 +220,6 @@ def _run_pipeline(reel_id: str, reel_url: str, user_context: str = "") -> None:
         plan, plan_cr = generate_plan(analysis, metadata, user_context=user_context)
         costs.add("plan", plan_cr.model, plan_cr.prompt_tokens, plan_cr.completion_tokens, plan_cr.cost_usd, plan_cr.generation_id)
 
-        repurposing_plan, rep_cr = generate_repurposing_plan(analysis, metadata, transcript.text)
-        costs.add("repurposing", rep_cr.model, rep_cr.prompt_tokens, rep_cr.completion_tokens, rep_cr.cost_usd, rep_cr.generation_id)
-
-        personal_brand_plan, pb_cr = generate_personal_brand_plan(analysis, metadata, transcript.text)
-        costs.add("personal_brand", pb_cr.model, pb_cr.prompt_tokens, pb_cr.completion_tokens, pb_cr.cost_usd, pb_cr.generation_id)
-
         costs.resolve_actual_costs()
 
         result = PipelineResult(
@@ -237,8 +229,6 @@ def _run_pipeline(reel_id: str, reel_url: str, user_context: str = "") -> None:
             transcript=transcript,
             analysis=analysis,
             plan=plan,
-            repurposing_plan=repurposing_plan,
-            personal_brand_plan=personal_brand_plan,
             similarity=similarity,
             cost_breakdown=costs,
         )

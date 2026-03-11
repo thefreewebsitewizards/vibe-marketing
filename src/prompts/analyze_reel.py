@@ -145,9 +145,13 @@ Rules for key_insights:
 - When the reel names specific tools, APIs, repos, or URLs — include them by name
 - Minimum 3, maximum 7 insights
 
-Rules for business_applications:
+Rules for business_applications — THINK IN LAYERS:
 - Each must name a specific target_system we'd implement it in
 - urgency "high" = do this week, "medium" = this month, "low" = backlog
+- Think at 3 depths:
+  1. OUR OPS: How does this improve our internal operations? (sales process, close rates, efficiency)
+  2. OUR CLIENTS: How does this help our clients succeed? (they pay for booked appointments, not closes — so helping them close better = retention)
+  3. OUR PRODUCT: Could this become a feature in the AIAS app dashboard? (e.g., close rate tracking, pricing recommendations, performance insights)
 - Minimum 1, maximum 5 applications
 
 Rules for swipe_phrases:

@@ -28,8 +28,6 @@ from src.services.transcriber import transcribe
 from src.services.analyzer import analyze_reel, analyze_carousel
 from src.services.ocr import extract_text_from_images
 from src.services.planner import generate_plan, check_plan_similarity
-from src.services.repurposer import generate_repurposing_plan
-from src.services.personal_brand import generate_personal_brand_plan
 from src.utils.file_ops import create_temp_dir, cleanup_temp_dir
 from src.utils.plan_writer import write_plan
 from src.utils.plan_manager import (
@@ -135,7 +133,7 @@ async def cmd_reject(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await _reject_plan(reel_id, update.message.reply_text)
 
 
-async def _approve_plan(reel_id: str, reply_fn):
+async def _approve_plan(reel_id: str, reply_fn, level: int | None = None):
     """Shared approve logic for commands and inline buttons."""
     entry = find_plan_by_id(reel_id)
     if not entry:
@@ -146,10 +144,26 @@ async def _approve_plan(reel_id: str, reply_fn):
         await reply_fn(f"Plan '{entry['title']}' is already {entry['status']}")
         return
 
+    # Store approved level in the plan metadata
+    if level:
+        try:
+            plan_dir = settings.plans_dir / entry["plan_dir"]
+            meta_path = plan_dir / "metadata.json"
+            if meta_path.exists():
+                with open(meta_path) as f:
+                    meta = json.load(f)
+                meta["approved_level"] = level
+                with open(meta_path, "w") as f:
+                    json.dump(meta, f, indent=2)
+        except Exception as e:
+            logger.warning(f"Failed to save approved level: {e}")
+
+    level_label = {1: "L1 Note it", 2: "L2 Build it", 3: "L3 Go deep"}.get(level, "all")
+
     update_plan_status(reel_id, PlanStatus.APPROVED)
     await reply_fn(
-        f"Approved: *{entry['title']}*\n\nStatus is now `approved`. "
-        f"Claude Code will pick it up for execution.",
+        f"Approved: *{_esc(entry['title'])}* ({level_label})\n\n"
+        f"Executing tasks up to level {level or 'all'}.",
         parse_mode="Markdown",
     )
 
@@ -170,17 +184,20 @@ async def handle_inline_button(update: Update, context: ContextTypes.DEFAULT_TYP
     query = update.callback_query
     await query.answer()
 
-    data = query.data  # e.g. "approve:DVO5FbkkWHS" or "reject:DVO5FbkkWHS"
+    data = query.data  # e.g. "approve:DVO5FbkkWHS:2" or "reject:DVO5FbkkWHS"
     if ":" not in data:
         return
 
-    action, reel_id = data.split(":", 1)
+    parts = data.split(":")
+    action = parts[0]
+    reel_id = parts[1] if len(parts) > 1 else ""
 
     async def reply_fn(text, **kwargs):
         await query.edit_message_text(text, **kwargs)
 
     if action == "approve":
-        await _approve_plan(reel_id, reply_fn)
+        level = int(parts[2]) if len(parts) > 2 else None
+        await _approve_plan(reel_id, reply_fn, level=level)
     elif action == "reject":
         await _reject_plan(reel_id, reply_fn)
     elif action == "generate_anyway":
@@ -313,15 +330,16 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     t0 = time.monotonic()
+    total_steps = 4
     progress_msg = await update.message.reply_text(
-        "Downloading reel... (step 1/6)"
+        f"Downloading reel... (step 1/{total_steps})"
     )
 
     async def _progress(step: int, label: str):
         elapsed = int(time.monotonic() - t0)
         try:
             await progress_msg.edit_text(
-                f"{label} (step {step}/6, {elapsed}s elapsed)"
+                f"{label} (step {step}/{total_steps}, {elapsed}s elapsed)"
             )
         except Exception:
             pass  # edit can fail if text unchanged or rate-limited
@@ -340,17 +358,15 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await _progress(3, "Analyzing content...")
             analysis, analysis_cr = analyze_carousel(ocr_text, metadata, image_paths, user_context=user_context)
         else:
-            await _progress(2, "Extracting audio & frames...")
+            await _progress(2, "Transcribing & analyzing...")
             video_path = download_result
             audio_path = extract_audio(video_path, temp_dir)
             frame_paths = extract_keyframes(video_path, temp_dir)
-            await _progress(3, "Transcribing audio...")
             transcript = transcribe(audio_path)
-            await _progress(4, "Analyzing content...")
+            await _progress(3, "Analyzing content...")
             analysis, analysis_cr = analyze_reel(transcript, metadata, frame_paths, user_context=user_context)
         costs.add("analysis", analysis_cr.model, analysis_cr.prompt_tokens, analysis_cr.completion_tokens, analysis_cr.cost_usd, analysis_cr.generation_id)
 
-        await _progress(5, "Checking for similar plans...")
         similarity, sim_cr = check_plan_similarity(analysis)
         if sim_cr:
             costs.add("similarity", sim_cr.model, sim_cr.prompt_tokens, sim_cr.completion_tokens, sim_cr.cost_usd, sim_cr.generation_id)
@@ -361,15 +377,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             cleanup_temp_dir(reel_id)
             return
 
-        await _progress(6, "Generating plan...")
+        await _progress(4, "Generating plan...")
         plan, plan_cr = generate_plan(analysis, metadata, user_context=user_context)
         costs.add("plan", plan_cr.model, plan_cr.prompt_tokens, plan_cr.completion_tokens, plan_cr.cost_usd, plan_cr.generation_id)
-
-        repurposing_plan, rep_cr = generate_repurposing_plan(analysis, metadata, transcript.text)
-        costs.add("repurposing", rep_cr.model, rep_cr.prompt_tokens, rep_cr.completion_tokens, rep_cr.cost_usd, rep_cr.generation_id)
-
-        personal_brand_plan, pb_cr = generate_personal_brand_plan(analysis, metadata, transcript.text)
-        costs.add("personal_brand", pb_cr.model, pb_cr.prompt_tokens, pb_cr.completion_tokens, pb_cr.cost_usd, pb_cr.generation_id)
 
         result = PipelineResult(
             reel_id=reel_id,
@@ -378,8 +388,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             transcript=transcript,
             analysis=analysis,
             plan=plan,
-            repurposing_plan=repurposing_plan,
-            personal_brand_plan=personal_brand_plan,
             similarity=similarity,
             cost_breakdown=costs,
         )
@@ -391,94 +399,63 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # Track last reel for this chat
         _last_reel[chat_id] = reel_id
 
-        # Build Telegram summary — lead with video context
-        vb = analysis.video_breakdown
+        # Build concise Telegram summary with tiered levels
+        theme_line = f"_{_esc(analysis.theme)}_" if analysis.theme else ""
 
-        # Video breakdown section
-        video_section = ""
-        if vb.main_points:
-            points = "\n".join(f"  {i}. {_esc(p)}" for i, p in enumerate(vb.main_points, 1))
-            video_section = f"*What they talked about:*\n{points}\n\n"
-        if vb.key_quotes:
-            top_quote = vb.key_quotes[0]
-            video_section += f"_{_esc(top_quote)}_\n\n"
+        # Level summaries
+        level_lines = []
+        for lvl in (1, 2, 3):
+            lvl_tasks = [t for t in plan.tasks if t.level == lvl]
+            lvl_summary = plan.level_summaries.get(str(lvl), "")
+            if lvl_tasks or lvl_summary:
+                hours = sum(t.estimated_hours for t in lvl_tasks)
+                human = any(t.requires_human for t in lvl_tasks)
+                flag = " \\[!]" if human else ""
+                label = _esc(lvl_summary) if lvl_summary else _esc(lvl_tasks[0].title) if lvl_tasks else ""
+                level_lines.append(f"  L{lvl}: {label} ({hours:.1f}h){flag}")
 
-        theme_line = f"_{_esc(analysis.theme)}_\n\n" if analysis.theme else ""
-        impact_line = f"*Why it matters:* {_esc(analysis.business_impact)}\n\n" if analysis.business_impact else ""
+        levels_section = "\n".join(level_lines)
 
-        # Task summary (compact)
-        task_lines = []
-        for i, t in enumerate(plan.tasks, 1):
-            flag = " \\[!]" if t.requires_human else ""
-            task_lines.append(f"  {i}. {_esc(t.title)} ({t.estimated_hours:.1f}h){flag}")
-        task_list = "\n".join(task_lines)
+        # Content angle
+        content_line = ""
+        if plan.content_angle:
+            content_line = f"\n\nDDB angle: {_esc(plan.content_angle)}"
 
-        human_count = sum(1 for t in plan.tasks if t.requires_human)
-        human_note = f"\n{human_count} task(s) need human action \\[!]" if human_count else ""
-
-        # Fact check warnings
+        # Fact check warnings (only if flagged)
         fact_warnings = ""
         flagged = [fc for fc in analysis.fact_checks if fc.verdict in ("outdated", "better_alternative")]
         if flagged:
-            warnings = "\n".join(f"  - \\[{_esc(fc.verdict)}] {_esc(fc.claim)}" for fc in flagged)
-            fact_warnings = f"\n\n*Heads up — fact checks:*\n{warnings}"
+            warnings = "\n".join(f"  \\[{_esc(fc.verdict)}] {_esc(fc.claim)}" for fc in flagged)
+            fact_warnings = f"\n\n{warnings}"
 
-        repurposing_line = ""
-        if repurposing_plan and repurposing_plan.tasks:
-            repurposing_line = f"\nContent repurposing: {len(repurposing_plan.tasks)} tasks ({repurposing_plan.total_estimated_hours:.1f}h)"
-
-        personal_brand_line = ""
-        if personal_brand_plan and personal_brand_plan.tasks:
-            personal_brand_line = f"\nDDB personal brand: {len(personal_brand_plan.tasks)} tasks ({personal_brand_plan.total_estimated_hours:.1f}h)"
-
-        similarity_line = ""
-        if similarity and similarity.similar_plans:
-            top = similarity.similar_plans[0]
-            similarity_line = f"\n\n*Similar to:* {_esc(top.title)} ({top.score}% overlap)"
-            if similarity.recommendation == "merge":
-                similarity_line += " — consider merging tasks"
-            elif similarity.recommendation == "skip":
-                similarity_line += " — very similar, review carefully"
-
-        # Resolve actual costs (saved to metadata, not shown in message)
+        # Resolve actual costs
         costs.resolve_actual_costs()
-
-        # First task as implementation snippet
-        impl_snippet = ""
-        if plan.tasks:
-            first_task = plan.tasks[0]
-            desc_preview = first_task.description[:150]
-            if len(first_task.description) > 150:
-                desc_preview += "..."
-            impl_snippet = f"\n\n*First step:* {_esc(first_task.title)}\n{_esc(desc_preview)}"
 
         summary = (
             f"*{_esc(plan.title)}*\n"
-            f"{_esc(metadata.creator)} · {analysis.relevance_score:.0%} relevance\n\n"
-            f"{theme_line}"
-            f"{video_section}"
-            f"{impact_line}"
-            f"*Tasks ({plan.total_estimated_hours:.1f}h):*\n"
-            f"{task_list}{human_note}"
-            f"{impl_snippet}"
+            f"{_esc(metadata.creator)} · {analysis.relevance_score:.0%}\n"
+            f"{theme_line}\n\n"
+            f"*Pick a level:*\n"
+            f"{levels_section}"
+            f"{content_line}"
             f"{fact_warnings}"
-            f"{similarity_line}"
         )
 
         base_url = settings.public_url or f"http://{settings.host}:{settings.port}"
         view_url = f"{base_url}/plans/{reel_id}/view"
         keyboard = InlineKeyboardMarkup([
             [
-                InlineKeyboardButton("✅ Approve", callback_data=f"approve:{reel_id}"),
-                InlineKeyboardButton("❌ Reject", callback_data=f"reject:{reel_id}"),
+                InlineKeyboardButton("L1 Note it", callback_data=f"approve:{reel_id}:1"),
+                InlineKeyboardButton("L2 Build it", callback_data=f"approve:{reel_id}:2"),
+                InlineKeyboardButton("L3 Go deep", callback_data=f"approve:{reel_id}:3"),
             ],
             [
-                InlineKeyboardButton("📄 View Plan", url=view_url),
+                InlineKeyboardButton("❌ Skip", callback_data=f"reject:{reel_id}"),
+                InlineKeyboardButton("📄 Details", url=view_url),
             ],
             [
-                InlineKeyboardButton("👍 Good Plan", callback_data=f"feedback_good:{reel_id}"),
-                InlineKeyboardButton("👎 Needs Work", callback_data=f"feedback_bad:{reel_id}"),
-                InlineKeyboardButton("🤷 Partial", callback_data=f"feedback_partial:{reel_id}"),
+                InlineKeyboardButton("👍", callback_data=f"feedback_good:{reel_id}"),
+                InlineKeyboardButton("👎", callback_data=f"feedback_bad:{reel_id}"),
             ],
         ])
 
@@ -490,7 +467,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             pass
 
         cost_line = _format_cost_line(costs)
-        summary_with_meta = f"{summary}{cost_line}\n\n_Processed in {elapsed}s_"
+        summary_with_meta = f"{summary}{cost_line}\n\n_{elapsed}s_"
 
         summary_msg = await update.message.reply_text(
             summary_with_meta, parse_mode="Markdown", reply_markup=keyboard,
@@ -504,7 +481,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             doc_msg = await update.message.reply_document(
                 document=f,
                 filename=f"plan_{reel_id}.md",
-                caption="Reply to this message with feedback to refine the plan.",
+                caption="Reply with feedback to refine.",
             )
             _plan_messages[doc_msg.message_id] = reel_id
 
@@ -661,12 +638,6 @@ async def _handle_generate_anyway(reel_id: str, query) -> None:
         plan, plan_cr = generate_plan(analysis, metadata)
         costs.add("plan", plan_cr.model, plan_cr.prompt_tokens, plan_cr.completion_tokens, plan_cr.cost_usd, plan_cr.generation_id)
 
-        repurposing_plan, rep_cr = generate_repurposing_plan(analysis, metadata, transcript_text)
-        costs.add("repurposing", rep_cr.model, rep_cr.prompt_tokens, rep_cr.completion_tokens, rep_cr.cost_usd, rep_cr.generation_id)
-
-        personal_brand_plan, pb_cr = generate_personal_brand_plan(analysis, metadata, transcript_text)
-        costs.add("personal_brand", pb_cr.model, pb_cr.prompt_tokens, pb_cr.completion_tokens, pb_cr.cost_usd, pb_cr.generation_id)
-
         result = PipelineResult(
             reel_id=reel_id,
             status=PlanStatus.REVIEW,
@@ -674,8 +645,6 @@ async def _handle_generate_anyway(reel_id: str, query) -> None:
             transcript=transcript,
             analysis=analysis,
             plan=plan,
-            repurposing_plan=repurposing_plan,
-            personal_brand_plan=personal_brand_plan,
             similarity=similarity,
             cost_breakdown=costs,
         )
@@ -691,50 +660,28 @@ async def _handle_generate_anyway(reel_id: str, query) -> None:
         result_plan_dir = write_plan(result)
         plan_md_path = result_plan_dir / "plan.md"
 
-        # Build summary message
-        vb = analysis.video_breakdown
-        video_section = ""
-        if vb.main_points:
-            points = "\n".join(f"  {i}. {_esc(p)}" for i, p in enumerate(vb.main_points, 1))
-            video_section = f"*What they talked about:*\n{points}\n\n"
-        if vb.key_quotes:
-            video_section += f"_{_esc(vb.key_quotes[0])}_\n\n"
-
-        theme_line = f"_{_esc(analysis.theme)}_\n\n" if analysis.theme else ""
-        impact_line = f"*Why it matters:* {_esc(analysis.business_impact)}\n\n" if analysis.business_impact else ""
-
-        task_lines = []
-        for i, t in enumerate(plan.tasks, 1):
-            flag = " \\[!]" if t.requires_human else ""
-            task_lines.append(f"  {i}. {_esc(t.title)} ({t.estimated_hours:.1f}h){flag}")
-        task_list = "\n".join(task_lines)
-
-        human_count = sum(1 for t in plan.tasks if t.requires_human)
-        human_note = f"\n{human_count} task(s) need human action \\[!]" if human_count else ""
-
-        repurposing_line = ""
-        if repurposing_plan and repurposing_plan.tasks:
-            repurposing_line = f"\nContent repurposing: {len(repurposing_plan.tasks)} tasks ({repurposing_plan.total_estimated_hours:.1f}h)"
-
-        personal_brand_line = ""
-        if personal_brand_plan and personal_brand_plan.tasks:
-            personal_brand_line = f"\nDDB personal brand: {len(personal_brand_plan.tasks)} tasks ({personal_brand_plan.total_estimated_hours:.1f}h)"
-
-        # Resolve actual costs from OpenRouter
+        # Build concise summary with tiered levels
         costs.resolve_actual_costs()
+        cost_line = _format_cost_line(costs) if costs.calls else ""
 
-        cost_line = ""
-        if costs.calls:
-            cost_line = _format_cost_line(costs)
+        theme_line = f"_{_esc(analysis.theme)}_" if analysis.theme else ""
+
+        level_lines = []
+        for lvl in (1, 2, 3):
+            lvl_tasks = [t for t in plan.tasks if t.level == lvl]
+            lvl_summary = plan.level_summaries.get(str(lvl), "")
+            if lvl_tasks or lvl_summary:
+                hours = sum(t.estimated_hours for t in lvl_tasks)
+                label = _esc(lvl_summary) if lvl_summary else _esc(lvl_tasks[0].title) if lvl_tasks else ""
+                level_lines.append(f"  L{lvl}: {label} ({hours:.1f}h)")
+        levels_section = "\n".join(level_lines)
 
         summary = (
             f"*{_esc(plan.title)}*\n"
-            f"{_esc(metadata.creator)} · {analysis.relevance_score:.0%} relevance\n\n"
-            f"{theme_line}"
-            f"{video_section}"
-            f"{impact_line}"
-            f"*Tasks ({plan.total_estimated_hours:.1f}h):*\n"
-            f"{task_list}{human_note}{repurposing_line}{personal_brand_line}"
+            f"{_esc(metadata.creator)} · {analysis.relevance_score:.0%}\n"
+            f"{theme_line}\n\n"
+            f"*Pick a level:*\n"
+            f"{levels_section}"
             f"{cost_line}"
         )
 
@@ -742,11 +689,13 @@ async def _handle_generate_anyway(reel_id: str, query) -> None:
         view_url = f"{base_url}/plans/{reel_id}/view"
         keyboard = InlineKeyboardMarkup([
             [
-                InlineKeyboardButton("Approve", callback_data=f"approve:{reel_id}"),
-                InlineKeyboardButton("Reject", callback_data=f"reject:{reel_id}"),
+                InlineKeyboardButton("L1 Note it", callback_data=f"approve:{reel_id}:1"),
+                InlineKeyboardButton("L2 Build it", callback_data=f"approve:{reel_id}:2"),
+                InlineKeyboardButton("L3 Go deep", callback_data=f"approve:{reel_id}:3"),
             ],
             [
-                InlineKeyboardButton("View Plan", url=view_url),
+                InlineKeyboardButton("❌ Skip", callback_data=f"reject:{reel_id}"),
+                InlineKeyboardButton("📄 Details", url=view_url),
             ],
         ])
 

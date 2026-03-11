@@ -103,6 +103,7 @@ class PlanTask(BaseModel):
     requires_human: bool = False
     human_reason: str = ""
     tool_data: dict = {}  # Structured data for automated execution (e.g. section_id, content)
+    level: int = 1  # 1=note, 2=implement, 3=ambitious
 
 
 class ImplementationPlan(BaseModel):
@@ -110,6 +111,8 @@ class ImplementationPlan(BaseModel):
     summary: str
     tasks: list[PlanTask]
     total_estimated_hours: float = 0.0
+    content_angle: str = ""  # DDB content idea (one-liner, if relevant)
+    level_summaries: dict[str, str] = {}  # {"1": "Note it", "2": "Build it", "3": "Go deep"}
 
 
 class LLMCallCost(BaseModel):
