@@ -139,8 +139,6 @@ _STEP_COLORS = {
     "analysis": "#3b82f6",
     "similarity": "#f59e0b",
     "plan": "#22c55e",
-    "repurposing": "#a78bfa",
-    "personal_brand": "#f472b6",
 }
 
 

@@ -50,16 +50,6 @@ def write_plan(result: PipelineResult) -> Path:
     notes_md = _format_notes_md(result)
     (plan_dir / "notes.md").write_text(notes_md)
 
-    # Write repurposing plan if present
-    if result.repurposing_plan:
-        repurposing_md = _format_repurposing_md(result.repurposing_plan)
-        (plan_dir / "repurposing_plan.md").write_text(repurposing_md)
-
-    # Write personal brand plan if present
-    if result.personal_brand_plan:
-        pb_md = _format_repurposing_md(result.personal_brand_plan)
-        (plan_dir / "personal_brand_plan.md").write_text(pb_md)
-
     # Write pre-rendered HTML view
     view_html = _render_plan_html(result)
     (plan_dir / "view.html").write_text(view_html)
@@ -80,29 +70,55 @@ def write_plan_md(plan: ImplementationPlan, plan_md_path: Path) -> None:
     lines = [
         f"# {plan.title}",
         "",
-        "## Summary",
-        "",
-        plan.summary,
-        "",
-        "## Tasks",
-        "",
     ]
-    for i, task in enumerate(plan.tasks, 1):
-        human_flag = " [NEEDS HUMAN]" if task.requires_human else ""
-        lines.append(f"### {i}. {task.title}{human_flag}")
-        lines.append(f"**Priority:** {task.priority} | **Hours:** {task.estimated_hours:.1f}h | **Tools:** {', '.join(task.tools)}")
-        if task.requires_human and task.human_reason:
-            lines.append(f"**Why human needed:** {task.human_reason}")
+
+    if plan.recommended_action:
+        lines.extend([f"**Do this:** {plan.recommended_action}", ""])
+
+    lines.extend(["## Summary", "", plan.summary, ""])
+
+    if plan.content_angle:
+        lines.extend(["## DDB Content Angle", "", plan.content_angle, ""])
+
+    # Level summaries
+    if plan.level_summaries:
+        lines.append("## Implementation Levels")
         lines.append("")
-        lines.append(task.description)
-        if task.deliverables:
+        level_labels = {"1": "L1 — Note it", "2": "L2 — Build it", "3": "L3 — Go deep"}
+        for k, v in plan.level_summaries.items():
+            label = level_labels.get(k, f"L{k}")
+            lines.append(f"- **{label}:** {v}")
+        lines.append("")
+
+    # Tasks grouped by level
+    lines.extend(["## Tasks", ""])
+    level_labels = {1: "L1 — Note it", 2: "L2 — Build it", 3: "L3 — Go deep"}
+    task_num = 0
+    for lvl in (1, 2, 3):
+        lvl_tasks = [t for t in plan.tasks if t.level == lvl]
+        if not lvl_tasks:
+            continue
+
+        lines.append(f"### {level_labels.get(lvl, f'L{lvl}')}")
+        lines.append("")
+
+        for task in lvl_tasks:
+            task_num += 1
+            human_flag = " [NEEDS HUMAN]" if task.requires_human else ""
+            lines.append(f"#### {task_num}. {task.title}{human_flag}")
+            lines.append(f"**Priority:** {task.priority} | **Hours:** {task.estimated_hours:.1f}h | **Tools:** {', '.join(task.tools)}")
+            if task.requires_human and task.human_reason:
+                lines.append(f"**Why human needed:** {task.human_reason}")
             lines.append("")
-            lines.append("**Deliverables:**")
-            for d in task.deliverables:
-                lines.append(f"- {d}")
-        if task.dependencies:
-            lines.append(f"\n**Depends on:** {', '.join(task.dependencies)}")
-        lines.append("")
+            lines.append(task.description)
+            if task.deliverables:
+                lines.append("")
+                lines.append("**Deliverables:**")
+                for d in task.deliverables:
+                    lines.append(f"- {d}")
+            if task.dependencies:
+                lines.append(f"\n**Depends on:** {', '.join(task.dependencies)}")
+            lines.append("")
 
     plan_md_path.write_text("\n".join(lines))
 
@@ -119,6 +135,9 @@ def _format_plan_md(result: PipelineResult) -> str:
         f"**Total Hours:** {plan.total_estimated_hours:.1f}h",
         f"**Status:** {result.status.value}",
     ]
+
+    if plan.recommended_action:
+        lines.extend(["", f"**Do this:** {plan.recommended_action}"])
 
     if analysis.theme:
         lines.extend(["", f"> *{analysis.theme}*"])
@@ -186,29 +205,54 @@ def _format_plan_md(result: PipelineResult) -> str:
         for phrase in analysis.swipe_phrases:
             lines.append(f"- {phrase}")
 
-    # Tasks
-    lines.extend(["", "## Implementation Tasks", ""])
+    # Content angle
+    if plan.content_angle:
+        lines.extend(["", "## DDB Content Angle", "", plan.content_angle])
+
+    # Implementation levels
+    lines.extend(["", "## Implementation Levels", ""])
+
+    level_labels = {1: "L1 — Note it", 2: "L2 — Build it", 3: "L3 — Go deep"}
+    for lvl_summary_key, summary_text in plan.level_summaries.items():
+        lvl = int(lvl_summary_key)
+        label = level_labels.get(lvl, f"L{lvl}")
+        lines.append(f"- **{label}:** {summary_text}")
+    lines.append("")
+
+    # Tasks grouped by level
+    lines.extend(["## Tasks", ""])
 
     human_count = sum(1 for t in plan.tasks if t.requires_human)
     if human_count:
         lines.append(f"*{human_count} task(s) require human action (marked [NEEDS HUMAN])*\n")
 
-    for i, task in enumerate(plan.tasks, 1):
-        human_flag = " [NEEDS HUMAN]" if task.requires_human else ""
-        lines.append(f"### {i}. {task.title}{human_flag}")
-        lines.append(f"**Priority:** {task.priority} | **Hours:** {task.estimated_hours:.1f}h | **Tools:** {', '.join(task.tools)}")
-        if task.requires_human and task.human_reason:
-            lines.append(f"**Why human needed:** {task.human_reason}")
+    task_num = 0
+    for lvl in (1, 2, 3):
+        lvl_tasks = [t for t in plan.tasks if t.level == lvl]
+        if not lvl_tasks:
+            continue
+
+        label = level_labels.get(lvl, f"L{lvl}")
+        lines.append(f"### {label}")
         lines.append("")
-        lines.append(task.description)
-        if task.deliverables:
+
+        for task in lvl_tasks:
+            task_num += 1
+            human_flag = " [NEEDS HUMAN]" if task.requires_human else ""
+            lines.append(f"#### {task_num}. {task.title}{human_flag}")
+            lines.append(f"**Priority:** {task.priority} | **Hours:** {task.estimated_hours:.1f}h | **Tools:** {', '.join(task.tools)}")
+            if task.requires_human and task.human_reason:
+                lines.append(f"**Why human needed:** {task.human_reason}")
             lines.append("")
-            lines.append("**Deliverables:**")
-            for d in task.deliverables:
-                lines.append(f"- {d}")
-        if task.dependencies:
-            lines.append(f"\n**Depends on:** {', '.join(task.dependencies)}")
-        lines.append("")
+            lines.append(task.description)
+            if task.deliverables:
+                lines.append("")
+                lines.append("**Deliverables:**")
+                for d in task.deliverables:
+                    lines.append(f"- {d}")
+            if task.dependencies:
+                lines.append(f"\n**Depends on:** {', '.join(task.dependencies)}")
+            lines.append("")
 
     return "\n".join(lines)
 
@@ -286,39 +330,6 @@ def _format_notes_md(result: PipelineResult) -> str:
     return "\n".join(lines)
 
 
-def _format_repurposing_md(plan: ImplementationPlan) -> str:
-    """Format a repurposing plan as markdown."""
-    lines = [
-        f"# {plan.title}",
-        "",
-        "## Summary",
-        "",
-        plan.summary,
-        "",
-        "## Content Tasks",
-        "",
-    ]
-
-    for i, task in enumerate(plan.tasks, 1):
-        human_flag = " [NEEDS HUMAN]" if task.requires_human else ""
-        lines.append(f"### {i}. {task.title}{human_flag}")
-        lines.append(f"**Priority:** {task.priority} | **Hours:** {task.estimated_hours:.1f}h | **Tools:** {', '.join(task.tools)}")
-        if task.requires_human and task.human_reason:
-            lines.append(f"**Why human needed:** {task.human_reason}")
-        lines.append("")
-        lines.append(task.description)
-        if task.deliverables:
-            lines.append("")
-            lines.append("**Deliverables:**")
-            for d in task.deliverables:
-                lines.append(f"- {d}")
-        if task.dependencies:
-            lines.append(f"\n**Depends on:** {', '.join(task.dependencies)}")
-        lines.append("")
-
-    return "\n".join(lines)
-
-
 def _render_plan_html(result: PipelineResult) -> str:
     """Render the full plan as a standalone HTML page."""
     from pathlib import Path
@@ -379,61 +390,45 @@ def _render_plan_html(result: PipelineResult) -> str:
             fc_line += "</div>"
             fact_checks_html += fc_line
 
-    # Tasks HTML
-    tasks_html = ""
-    human_count = sum(1 for t in plan.tasks if t.requires_human)
-    if human_count:
-        tasks_html += f'<p class="human-note">{human_count} task(s) require human action</p>'
-
-    for i, task in enumerate(plan.tasks, 1):
-        human_badge = ' <span class="badge" style="background:#ef4444;">NEEDS HUMAN</span>' if task.requires_human else ""
-        deliverables = "".join(f"<li>{_html_esc(d)}</li>" for d in task.deliverables)
-        deps = f"<p><em>Depends on: {_html_esc(', '.join(task.dependencies))}</em></p>" if task.dependencies else ""
-        human_reason = f"<p><em>Why human needed: {_html_esc(task.human_reason)}</em></p>" if task.requires_human and task.human_reason else ""
-        tasks_html += (
-            f'<div class="task">'
-            f'<h3>{i}. {_html_esc(task.title)}{human_badge}</h3>'
-            f'<p class="task-meta">{_html_esc(task.priority)} &middot; {task.estimated_hours:.1f}h &middot; {_html_esc(", ".join(task.tools))}</p>'
-            f'{human_reason}'
-            f'<div class="task-desc">{_md_to_html(task.description)}</div>'
-            f'{"<ul>" + deliverables + "</ul>" if deliverables else ""}'
-            f'{deps}'
+    # Recommended action HTML
+    recommended_action_html = ""
+    if plan.recommended_action:
+        recommended_action_html = (
+            f'<div class="impact" style="border-left-color:#22c55e;">'
+            f'<strong>Do this:</strong> {_html_esc(plan.recommended_action)}'
             f'</div>'
         )
 
-    # Repurposing section HTML
-    repurposing_html = ""
-    if result.repurposing_plan:
-        rp = result.repurposing_plan
-        repurposing_html += f'<h2>Content Repurposing Guide</h2><p>{_md_to_html(rp.summary)}</p>'
-        for i, task in enumerate(rp.tasks, 1):
-            human_badge = ' <span class="badge" style="background:#ef4444;">NEEDS HUMAN</span>' if task.requires_human else ""
-            deliverables = "".join(f"<li>{_md_to_html(d)}</li>" for d in task.deliverables)
-            repurposing_html += (
-                f'<div class="task">'
-                f'<h3>{i}. {_html_esc(task.title)}{human_badge}</h3>'
-                f'<p class="task-meta">{_html_esc(task.priority)} &middot; {task.estimated_hours:.1f}h</p>'
-                f'<div class="task-desc">{_md_to_html(task.description)}</div>'
-                f'{"<ul>" + deliverables + "</ul>" if deliverables else ""}'
-                f'</div>'
-            )
+    # Content angle HTML
+    content_angle_html = ""
+    if plan.content_angle:
+        content_angle_html = f'<h2>DDB Content Angle</h2><p>{_md_to_html(plan.content_angle)}</p>'
 
-    # Personal brand section HTML
-    personal_brand_html = ""
-    if result.personal_brand_plan:
-        pb = result.personal_brand_plan
-        personal_brand_html += f'<h2>Dylan Does Business — Personal Brand Plan</h2><p>{_md_to_html(pb.summary)}</p>'
-        for i, task in enumerate(pb.tasks, 1):
-            human_badge = ' <span class="badge" style="background:#ef4444;">NEEDS HUMAN</span>' if task.requires_human else ""
-            deliverables = "".join(f"<li>{_md_to_html(d)}</li>" for d in task.deliverables)
-            personal_brand_html += (
-                f'<div class="task">'
-                f'<h3>{i}. {_html_esc(task.title)}{human_badge}</h3>'
-                f'<p class="task-meta">{_html_esc(task.priority)} &middot; {task.estimated_hours:.1f}h</p>'
-                f'<div class="task-desc">{_md_to_html(task.description)}</div>'
-                f'{"<ul>" + deliverables + "</ul>" if deliverables else ""}'
-                f'</div>'
-            )
+    # Level summaries HTML
+    level_summaries_html = ""
+    if plan.level_summaries:
+        level_labels = {"1": "L1 — Note it", "2": "L2 — Build it", "3": "L3 — Go deep"}
+        items = "".join(
+            f'<li><strong>{level_labels.get(k, f"L{k}")}:</strong> {_html_esc(v)}</li>'
+            for k, v in plan.level_summaries.items()
+        )
+        level_summaries_html = f'<h2>Implementation Levels</h2><ul>{items}</ul>'
+
+    # Tasks as JSON for interactive control panel
+    tasks_json_data = []
+    for task in plan.tasks:
+        tasks_json_data.append({
+            "title": task.title,
+            "description": task.description,
+            "priority": task.priority,
+            "estimated_hours": task.estimated_hours,
+            "tools": task.tools,
+            "deliverables": task.deliverables,
+            "level": task.level,
+            "requires_human": task.requires_human,
+            "human_reason": task.human_reason or "",
+        })
+    tasks_json = json.dumps(tasks_json_data)
 
     # Video breakdown HTML
     vb = analysis.video_breakdown
@@ -493,6 +488,7 @@ def _render_plan_html(result: PipelineResult) -> str:
         )
 
     replacements = {
+        "{{recommended_action_html}}": recommended_action_html,
         "{{similarity_html}}": similarity_html,
         "{{title}}": _html_esc(plan.title),
         "{{theme}}": _html_esc(analysis.theme) if analysis.theme else "",
@@ -506,11 +502,10 @@ def _render_plan_html(result: PipelineResult) -> str:
         "{{insights_html}}": insights_html,
         "{{phrases_html}}": phrases_html,
         "{{fact_checks_section}}": _build_fact_checks_section(fact_checks_html),
-        "{{tasks_html}}": tasks_html,
-        "{{total_hours}}": f"{plan.total_estimated_hours:.1f}",
+        "{{tasks_json}}": tasks_json,
         "{{duration}}": duration_str,
-        "{{repurposing_html}}": repurposing_html,
-        "{{personal_brand_html}}": personal_brand_html,
+        "{{content_angle_html}}": content_angle_html,
+        "{{level_summaries_html}}": level_summaries_html,
         "{{source_url}}": _html_esc(result.metadata.url),
         "{{creator}}": _html_esc(result.metadata.creator),
         "{{category}}": _html_esc(analysis.category),
@@ -518,7 +513,6 @@ def _render_plan_html(result: PipelineResult) -> str:
         "{{cost_html}}": cost_html,
         "{{reel_id}}": _html_esc(result.reel_id),
         "{{status}}": result.status.value,
-        "{{action_buttons_html}}": _build_action_buttons(result.reel_id, result.status.value),
     }
 
     html = template
@@ -526,21 +520,6 @@ def _render_plan_html(result: PipelineResult) -> str:
         html = html.replace(key, value)
 
     return html
-
-
-def _build_action_buttons(reel_id: str, status: str) -> str:
-    """Build action buttons bar for plan view."""
-    reel_id_esc = _html_esc(reel_id)
-    buttons = (
-        f'<div class="action-bar">'
-        f'<button class="action-btn back" onclick="location.href=\'/\'">Dashboard</button>'
-        f'<button class="action-btn approve" onclick="updateStatus(\'{reel_id_esc}\',\'approved\',this)">Approve</button>'
-        f'<button class="action-btn reject" onclick="updateStatus(\'{reel_id_esc}\',\'failed\',this)">Reject</button>'
-        f'<button class="action-btn complete" onclick="updateStatus(\'{reel_id_esc}\',\'completed\',this)">Mark Complete</button>'
-        f'<span id="action-status" class="action-status">Status: {_html_esc(status)}</span>'
-        f'</div>'
-    )
-    return buttons
 
 
 def _build_route_badge(routing_target: str) -> str:

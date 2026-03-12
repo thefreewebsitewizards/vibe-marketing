@@ -111,6 +111,7 @@ class ImplementationPlan(BaseModel):
     summary: str
     tasks: list[PlanTask]
     total_estimated_hours: float = 0.0
+    recommended_action: str = ""  # Single most impactful thing to do
     content_angle: str = ""  # DDB content idea (one-liner, if relevant)
     level_summaries: dict[str, str] = {}  # {"1": "Note it", "2": "Build it", "3": "Go deep"}
 
@@ -173,8 +174,6 @@ class PipelineResult(BaseModel):
     transcript: TranscriptResult
     analysis: AnalysisResult
     plan: ImplementationPlan
-    repurposing_plan: ImplementationPlan | None = None
-    personal_brand_plan: ImplementationPlan | None = None
     similarity: SimilarityResult | None = None
     cost_breakdown: CostBreakdown | None = None
     plan_dir: str = ""

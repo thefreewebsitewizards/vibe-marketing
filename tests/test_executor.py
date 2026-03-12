@@ -4,6 +4,7 @@ from unittest.mock import patch, MagicMock
 from src.services.executor import (
     classify_task, execute_plan,
     _handle_sales_script, _handle_content, _handle_n8n, _handle_code_task,
+    _handle_knowledge_base,
 )
 
 
@@ -158,3 +159,87 @@ class TestHandleCodeTask:
         task = {"title": "Fix bug", "description": "Fix the login bug in auth.py"}
         result = _handle_code_task(task, {}, "/tmp/plan")
         assert "Logged for Claude Code" in result
+
+
+class TestHandleKnowledgeBase:
+    def test_should_save_entry(self, tmp_path):
+        plan_dir = tmp_path / "2026-03-11_KB1"
+        plan_dir.mkdir()
+        (plan_dir / "metadata.json").write_text(json.dumps({
+            "reel_id": "KB1", "source_url": "https://instagram.com/reel/KB1/",
+        }))
+
+        task = {"title": "Note AI insight", "description": "AI agents are the future"}
+        tool_data = {
+            "title": "AI agents trend",
+            "content": "AI agents are transforming business automation",
+            "category": "ai_automation",
+            "tags": ["ai", "agents"],
+        }
+
+        with patch("src.utils.knowledge_base.settings") as mock_settings:
+            mock_settings.plans_dir = tmp_path
+            result = _handle_knowledge_base(task, tool_data, str(plan_dir))
+
+        assert "Saved" in result
+        assert "AI agents trend" in result
+
+        # Verify the KB file was created
+        kb_file = tmp_path / "_knowledge_base.json"
+        assert kb_file.exists()
+        entries = json.loads(kb_file.read_text())
+        assert len(entries) == 1
+        assert entries[0]["category"] == "ai_automation"
+        assert entries[0]["tags"] == ["ai", "agents"]
+
+    def test_should_skip_when_no_content(self, tmp_path):
+        task = {"title": "Empty note", "description": ""}
+        result = _handle_knowledge_base(task, {}, str(tmp_path))
+        assert "skipped" in result
+
+    def test_should_fall_back_to_description(self, tmp_path):
+        plan_dir = tmp_path / "2026-03-11_KB2"
+        plan_dir.mkdir()
+
+        task = {"title": "Insight note", "description": "Use webhooks for real-time sync"}
+        tool_data = {"category": "operations"}
+
+        with patch("src.utils.knowledge_base.settings") as mock_settings:
+            mock_settings.plans_dir = tmp_path
+            result = _handle_knowledge_base(task, tool_data, str(plan_dir))
+
+        assert "Saved" in result
+
+
+class TestExecutePlanLevelFilter:
+    def test_should_filter_tasks_by_approved_level(self, tmp_path):
+        """Only tasks at or below approved_level should execute."""
+        plan_data = {
+            "title": "Tiered Plan",
+            "tasks": [
+                {"title": "L1 note", "description": "note it", "level": 1,
+                 "tools": ["knowledge_base"], "requires_human": False,
+                 "tool_data": {"content": "test note"}},
+                {"title": "L2 build", "description": "build it", "level": 2,
+                 "tools": ["claude_code"], "requires_human": False},
+                {"title": "L3 deep", "description": "go deep", "level": 3,
+                 "tools": ["claude_code"], "requires_human": False},
+            ],
+        }
+        plan_dir = tmp_path / "2026-03-11_LVL"
+        plan_dir.mkdir()
+        (plan_dir / "plan.json").write_text(json.dumps(plan_data))
+        (plan_dir / "metadata.json").write_text(json.dumps({
+            "reel_id": "LVL", "status": "approved", "approved_level": 1,
+        }))
+
+        with patch("src.services.executor.settings") as mock_settings, \
+             patch("src.services.executor._notify_execution_complete"), \
+             patch("src.services.executor.update_plan_status"), \
+             patch("src.utils.knowledge_base.settings") as kb_settings:
+            mock_settings.plans_dir = tmp_path
+            kb_settings.plans_dir = tmp_path
+            result = execute_plan("LVL", "2026-03-11_LVL")
+
+        # Only L1 task should execute (1 auto task)
+        assert result["auto_count"] == 1

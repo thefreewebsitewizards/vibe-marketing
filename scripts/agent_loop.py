@@ -92,6 +92,16 @@ def handle_task(reel_id: str, task: dict) -> bool:
             else:
                 notes_parts.append(f"[agent] No drafts for content task — skipped")
 
+        elif tool == "knowledge_base":
+            # KB tasks are auto-executed by the server-side executor
+            # If we see one pending here, it means the executor didn't run
+            content = tool_data.get("content", task.get("description", ""))
+            if content:
+                notes_parts.append(f"[agent] KB note: {content[:80]}")
+                handled = True
+            else:
+                notes_parts.append(f"[agent] KB task with no content — skipped")
+
         elif tool == "n8n":
             notes_parts.append(f"[agent] n8n workflow spec — logged for manual import")
             handled = True

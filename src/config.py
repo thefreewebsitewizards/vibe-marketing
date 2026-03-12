@@ -16,8 +16,6 @@ class Settings(BaseSettings):
     openrouter_model_analysis: str = ""
     openrouter_model_plan: str = ""
     openrouter_model_similarity: str = "google/gemini-2.5-flash"
-    openrouter_model_repurposing: str = ""
-    openrouter_model_personal_brand: str = ""
 
     # Apify fallback
     apify_api_key: str = ""

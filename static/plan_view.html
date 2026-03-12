@@ -58,14 +58,6 @@
     position: absolute; left: 12px; top: 8px;
     color: #60a5fa; font-weight: 700; font-size: 0.9rem;
   }
-  .task {
-    background: #1e293b; border-radius: 6px; padding: 16px;
-    margin-bottom: 12px;
-  }
-  .task h3 { margin-bottom: 4px; }
-  .task-meta { color: #94a3b8; font-size: 0.85rem; margin-bottom: 8px; }
-  .task ul { margin-top: 8px; }
-  .human-note { color: #f59e0b; font-weight: 600; margin-bottom: 12px; }
   .section-notes { background: #1e293b; border-radius: 6px; padding: 16px; margin-bottom: 12px; }
   .section-notes p { margin-bottom: 6px; }
   .similarity-callout {
@@ -78,32 +70,107 @@
   .collapsible.open::after { content: " −"; }
   .collapsible-content { display: none; }
   .collapsible-content.open { display: block; }
-  .action-bar { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
-  .action-btn {
-    padding: 10px 18px; border: none; border-radius: 8px; cursor: pointer;
-    font-weight: 600; font-size: 0.9rem; color: #fff; transition: opacity 0.2s;
-    min-height: 44px; min-width: 44px;
-  }
-  .action-btn:hover { opacity: 0.85; }
-  .action-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-  .action-btn.approve { background: #22c55e; }
-  .action-btn.reject { background: #ef4444; }
-  .action-btn.complete { background: #3b82f6; }
-  .action-btn.back { background: #475569; }
-  .action-status { color: #94a3b8; font-size: 0.85rem; align-self: center; }
   .badge-route { background: #0891b2; margin-left: 4px; vertical-align: middle; }
   table { width: 100%; border-collapse: collapse; }
   table th, table td { padding: 6px 10px; text-align: left; }
   .cost-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+  /* Control panel */
+  .control-panel {
+    background: #1e293b; border-radius: 8px; padding: 20px;
+    margin-bottom: 24px; border: 1px solid #334155;
+  }
+  .control-panel h2 { margin-top: 0; border: none; padding: 0; margin-bottom: 16px; }
+  .task-card {
+    background: #0f172a; border-radius: 6px; padding: 14px;
+    margin-bottom: 10px; cursor: pointer; transition: border-color 0.15s;
+    border: 2px solid transparent; display: flex; gap: 12px; align-items: flex-start;
+  }
+  .task-card:hover { border-color: #475569; }
+  .task-card.selected { border-color: #22c55e; }
+  .task-card.resolved { opacity: 0.5; pointer-events: none; }
+  .task-check {
+    width: 22px; height: 22px; border-radius: 4px; border: 2px solid #475569;
+    flex-shrink: 0; margin-top: 2px; display: flex; align-items: center;
+    justify-content: center; transition: all 0.15s;
+  }
+  .task-card.selected .task-check { background: #22c55e; border-color: #22c55e; }
+  .task-check-mark { display: none; color: #fff; font-size: 14px; font-weight: 700; }
+  .task-card.selected .task-check-mark { display: block; }
+  .task-body { flex: 1; min-width: 0; }
+  .task-title { font-weight: 600; color: #f1f5f9; margin-bottom: 4px; }
+  .task-meta { color: #94a3b8; font-size: 0.8rem; margin-bottom: 6px; }
+  .task-desc { color: #cbd5e1; font-size: 0.9rem; }
+  .task-deliverables { margin-top: 6px; padding-left: 18px; font-size: 0.85rem; color: #94a3b8; }
+  .task-level-badge {
+    display: inline-block; padding: 1px 6px; border-radius: 3px;
+    font-size: 0.7rem; font-weight: 600; margin-right: 6px;
+  }
+  .level-1 { background: #334155; color: #94a3b8; }
+  .level-2 { background: #1e3a5f; color: #60a5fa; }
+  .level-3 { background: #3b1764; color: #a78bfa; }
+  .human-badge {
+    display: inline-block; padding: 1px 6px; border-radius: 3px;
+    font-size: 0.7rem; font-weight: 600; background: #7f1d1d; color: #fca5a5;
+  }
+  .notes-area {
+    width: 100%; background: #0f172a; border: 1px solid #334155; border-radius: 6px;
+    color: #e2e8f0; padding: 10px 12px; font-size: 0.9rem; resize: vertical;
+    min-height: 60px; margin-bottom: 12px; font-family: inherit;
+  }
+  .notes-area::placeholder { color: #64748b; }
+  .control-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .ctrl-btn {
+    padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer;
+    font-weight: 600; font-size: 0.95rem; color: #fff; transition: opacity 0.2s;
+    min-height: 48px;
+  }
+  .ctrl-btn:hover { opacity: 0.85; }
+  .ctrl-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .ctrl-btn.approve { background: #22c55e; }
+  .ctrl-btn.skip { background: #ef4444; }
+  .ctrl-btn.back { background: #475569; }
+  .ctrl-count { color: #94a3b8; font-size: 0.85rem; }
+  .ctrl-status { color: #94a3b8; font-size: 0.85rem; margin-left: auto; }
+
+  /* Feedback */
+  .feedback-bar {
+    display: flex; gap: 8px; align-items: center; margin-top: 16px;
+    padding-top: 16px; border-top: 1px solid #334155;
+  }
+  .fb-btn {
+    padding: 8px 16px; border: 1px solid #334155; border-radius: 6px;
+    background: transparent; color: #94a3b8; cursor: pointer; font-size: 0.85rem;
+    transition: all 0.15s;
+  }
+  .fb-btn:hover { border-color: #64748b; color: #e2e8f0; }
+  .fb-btn.active { border-color: #22c55e; color: #22c55e; }
+  .fb-comment {
+    width: 100%; background: #0f172a; border: 1px solid #334155; border-radius: 6px;
+    color: #e2e8f0; padding: 8px 10px; font-size: 0.85rem; margin-top: 8px;
+    font-family: inherit; display: none;
+  }
+  .fb-comment.visible { display: block; }
+  .fb-submit { margin-top: 8px; display: none; }
+  .fb-submit.visible { display: inline-block; }
+
+  /* Resolved state */
+  .control-panel.resolved { border-color: #22c55e40; }
+  .resolved-banner {
+    background: #14532d; color: #4ade80; padding: 12px 16px; border-radius: 6px;
+    font-weight: 600; margin-bottom: 12px; display: none;
+  }
+  .resolved-banner.visible { display: block; }
+
   @media (max-width: 600px) {
     body { padding: 10px; }
     h1 { font-size: 1.2rem; word-break: break-word; }
     h2 { font-size: 1.05rem; margin-top: 24px; }
-    .task, .card { padding: 10px; }
-    .action-bar { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    .action-btn { text-align: center; padding: 12px 10px; font-size: 0.85rem; }
-    .action-btn.back { grid-column: 1 / -1; }
-    .action-status { grid-column: 1 / -1; text-align: center; }
+    .card { padding: 10px; }
+    .control-panel { padding: 14px; }
+    .task-card { padding: 10px; }
+    .control-actions { flex-direction: column; }
+    .ctrl-btn { width: 100%; text-align: center; }
     .meta { font-size: 0.8rem; }
     .impact { padding: 10px 12px; }
     .quote { padding: 8px 12px; font-size: 0.9rem; }
@@ -127,12 +194,34 @@
   </div>
 </div>
 
-{{action_buttons_html}}
-
+{{recommended_action_html}}
 {{similarity_html}}
 <div class="impact">{{business_impact}}</div>
 
 <p>{{summary}}</p>
+
+<!-- Control Panel -->
+<div class="control-panel" id="control-panel">
+  <h2>Tasks</h2>
+  <div class="resolved-banner" id="resolved-banner"></div>
+  <div id="task-list"></div>
+  <textarea class="notes-area" id="approval-notes" placeholder="Any notes? (optional)"></textarea>
+  <div class="control-actions">
+    <button class="ctrl-btn approve" id="btn-approve" onclick="approveSelected()">Approve selected</button>
+    <button class="ctrl-btn skip" id="btn-skip" onclick="skipPlan()">Skip</button>
+    <button class="ctrl-btn back" onclick="location.href='/'">Dashboard</button>
+    <span class="ctrl-count" id="selected-count">0 selected</span>
+    <span class="ctrl-status" id="ctrl-status"></span>
+  </div>
+  <div class="feedback-bar" id="feedback-bar">
+    <span style="color:#64748b;font-size:0.85rem;">Rate this plan:</span>
+    <button class="fb-btn" onclick="setFeedback('good',this)">Good</button>
+    <button class="fb-btn" onclick="setFeedback('partial',this)">Partial</button>
+    <button class="fb-btn" onclick="setFeedback('bad',this)">Needs work</button>
+  </div>
+  <input class="fb-comment" id="fb-comment" placeholder="What should be different?" />
+  <button class="fb-btn fb-submit" id="fb-submit" onclick="sendFeedback()">Send feedback</button>
+</div>
 
 {{video_breakdown_html}}
 
@@ -154,44 +243,178 @@
 
 {{fact_checks_section}}
 
-<h2 class="collapsible" onclick="toggle(this)">Implementation Tasks ({{total_hours}}h)</h2>
-<div class="collapsible-content">
-{{tasks_html}}
-</div>
+{{content_angle_html}}
 
-{{repurposing_html}}
-
-{{personal_brand_html}}
+{{level_summaries_html}}
 
 {{cost_html}}
 
 <script>
-function toggle(el){
-  el.classList.toggle('open');
-  el.nextElementSibling.classList.toggle('open');
+var REEL_ID = '{{reel_id}}';
+var PLAN_STATUS = '{{status}}';
+var TASKS = {{tasks_json}};
+var selectedTasks = new Set();
+var feedbackRating = '';
+
+function renderTasks() {
+  var list = document.getElementById('task-list');
+  var isResolved = PLAN_STATUS !== 'review';
+  var levelLabels = {1: 'L1', 2: 'L2', 3: 'L3'};
+  var levelClasses = {1: 'level-1', 2: 'level-2', 3: 'level-3'};
+
+  list.innerHTML = TASKS.map(function(t, i) {
+    var levelBadge = '<span class="task-level-badge ' + (levelClasses[t.level] || 'level-1') + '">' +
+      (levelLabels[t.level] || 'L' + t.level) + '</span>';
+    var humanBadge = t.requires_human ? ' <span class="human-badge">NEEDS HUMAN</span>' : '';
+    var deliverables = '';
+    if (t.deliverables && t.deliverables.length) {
+      deliverables = '<ul class="task-deliverables">' +
+        t.deliverables.map(function(d) { return '<li>' + esc(d) + '</li>'; }).join('') +
+        '</ul>';
+    }
+    var cls = 'task-card' + (isResolved ? ' resolved' : '');
+    return '<div class="' + cls + '" data-idx="' + i + '" onclick="toggleTask(' + i + ',this)">' +
+      '<div class="task-check"><span class="task-check-mark">&#10003;</span></div>' +
+      '<div class="task-body">' +
+        '<div class="task-title">' + levelBadge + esc(t.title) + humanBadge + '</div>' +
+        '<div class="task-meta">' + esc(t.priority) + ' &middot; ' + t.estimated_hours.toFixed(1) + 'h &middot; ' + esc(t.tools.join(', ')) + '</div>' +
+        '<div class="task-desc">' + esc(t.description) + '</div>' +
+        deliverables +
+      '</div></div>';
+  }).join('');
+
+  if (isResolved) {
+    document.getElementById('btn-approve').disabled = true;
+    document.getElementById('btn-skip').disabled = true;
+    document.getElementById('approval-notes').disabled = true;
+    var banner = document.getElementById('resolved-banner');
+    banner.textContent = 'Plan status: ' + PLAN_STATUS;
+    banner.classList.add('visible');
+  }
 }
-async function updateStatus(reelId, status, btn) {
+
+function toggleTask(idx, el) {
+  if (PLAN_STATUS !== 'review') return;
+  if (selectedTasks.has(idx)) {
+    selectedTasks.delete(idx);
+    el.classList.remove('selected');
+  } else {
+    selectedTasks.add(idx);
+    el.classList.add('selected');
+  }
+  updateCount();
+}
+
+function updateCount() {
+  var hours = 0;
+  selectedTasks.forEach(function(idx) { hours += TASKS[idx].estimated_hours; });
+  var label = selectedTasks.size + ' selected';
+  if (selectedTasks.size > 0) label += ' (' + hours.toFixed(1) + 'h)';
+  document.getElementById('selected-count').textContent = label;
+  document.getElementById('btn-approve').disabled = selectedTasks.size === 0;
+}
+
+async function approveSelected() {
+  var btn = document.getElementById('btn-approve');
+  var status = document.getElementById('ctrl-status');
   btn.disabled = true;
-  const statusEl = document.getElementById('action-status');
-  statusEl.textContent = 'Updating...';
+  status.textContent = 'Approving...';
+
   try {
-    const res = await fetch('/plans/' + reelId + '/status', {
-      method: 'PATCH',
+    var res = await fetch('/plans/' + REEL_ID + '/approve', {
+      method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({status: status}),
+      body: JSON.stringify({
+        selected_tasks: Array.from(selectedTasks),
+        notes: document.getElementById('approval-notes').value,
+      }),
     });
     if (res.ok) {
-      statusEl.textContent = 'Status: ' + status;
-      document.querySelectorAll('.action-btn:not(.back)').forEach(b => b.disabled = true);
+      PLAN_STATUS = 'approved';
+      status.textContent = 'Approved! Executing...';
+      document.getElementById('btn-skip').disabled = true;
+      document.getElementById('approval-notes').disabled = true;
+      var banner = document.getElementById('resolved-banner');
+      banner.textContent = 'Approved — executing ' + selectedTasks.size + ' task(s)';
+      banner.classList.add('visible');
+      document.querySelectorAll('.task-card').forEach(function(c) {
+        c.classList.add('resolved');
+      });
     } else {
-      statusEl.textContent = 'Failed: ' + res.statusText;
+      var err = await res.json();
+      status.textContent = 'Error: ' + (err.detail || res.statusText);
       btn.disabled = false;
     }
   } catch(e) {
-    statusEl.textContent = 'Error: ' + e.message;
+    status.textContent = 'Error: ' + e.message;
     btn.disabled = false;
   }
 }
+
+async function skipPlan() {
+  var btn = document.getElementById('btn-skip');
+  var status = document.getElementById('ctrl-status');
+  btn.disabled = true;
+  status.textContent = 'Skipping...';
+
+  try {
+    var res = await fetch('/plans/' + REEL_ID + '/skip', { method: 'POST' });
+    if (res.ok) {
+      PLAN_STATUS = 'skipped';
+      status.textContent = 'Skipped';
+      document.getElementById('btn-approve').disabled = true;
+      document.getElementById('approval-notes').disabled = true;
+      var banner = document.getElementById('resolved-banner');
+      banner.textContent = 'Plan skipped';
+      banner.classList.add('visible');
+    } else {
+      status.textContent = 'Error: ' + res.statusText;
+      btn.disabled = false;
+    }
+  } catch(e) {
+    status.textContent = 'Error: ' + e.message;
+    btn.disabled = false;
+  }
+}
+
+function setFeedback(rating, btn) {
+  feedbackRating = rating;
+  document.querySelectorAll('.fb-btn').forEach(function(b) { b.classList.remove('active'); });
+  btn.classList.add('active');
+  document.getElementById('fb-comment').classList.add('visible');
+  document.getElementById('fb-submit').classList.add('visible');
+}
+
+async function sendFeedback() {
+  var comment = document.getElementById('fb-comment').value;
+  try {
+    await fetch('/plans/' + REEL_ID + '/feedback', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ rating: feedbackRating, comment: comment }),
+    });
+    document.getElementById('feedback-bar').innerHTML = '<span style="color:#4ade80;">Feedback saved. Thanks!</span>';
+    document.getElementById('fb-comment').style.display = 'none';
+    document.getElementById('fb-submit').style.display = 'none';
+  } catch(e) {
+    document.getElementById('ctrl-status').textContent = 'Feedback error: ' + e.message;
+  }
+}
+
+function esc(s) {
+  if (!s) return '';
+  var d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+function toggle(el) {
+  el.classList.toggle('open');
+  el.nextElementSibling.classList.toggle('open');
+}
+
+renderTasks();
+updateCount();
 </script>
 </body>
 </html>

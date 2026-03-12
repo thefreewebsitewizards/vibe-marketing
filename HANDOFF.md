@@ -1,4 +1,4 @@
-# Session Handoff — 2026-03-11 (Session 14)
+# Session Handoff — 2026-03-11 (Session 15)
 
 ## Project Overview
 - Instagram Reel → Business Strategy Pipeline (FastAPI + Telegram + OpenRouter LLM)
@@ -6,51 +6,50 @@
 
 ## Completed This Session
 
-### Bug Fix: Telegram Bot Polling Conflict
-- Local dev server was competing with production for Telegram bot polling (same token)
-- Added `ENABLE_TELEGRAM_BOT` setting (default `True`, `False` in local `.env`)
-- Killed local server, production now receives messages again
+### Tiered Plan Writer + Level-Filtered Execution
+- `plan_writer.py`: `_format_plan_md` and `write_plan_md` group tasks by L1/L2/L3, show `content_angle` + `level_summaries`
+- `executor.py`: reads `approved_level` from metadata.json, filters tasks to `level <= approved_level`
+- Removed dead code: `_format_repurposing_md`, repurposing/personal_brand file writes + HTML sections
+- `plan_view.html`: uses `{{content_angle_html}}` / `{{level_summaries_html}}` (replaced old placeholders)
 
-### Dynamic Processing Progress
-- Replaced static "60-90 seconds" with live step-by-step progress (step N/4, Xs elapsed)
-- Final summary shows actual processing time and cost breakdown
-- Fixed Markdown parsing crash from unescaped underscores in cost line
+### Knowledge Base Tool
+- `src/utils/knowledge_base.py` — persistent JSON storage at `plans/_knowledge_base.json`
+- Handler `_handle_knowledge_base` in executor.py (in `_TOOL_HANDLERS`)
+- API: `src/routers/knowledge.py` — GET /knowledge/, /knowledge/search, /knowledge/context
+- Plan prompt: L1 tasks prefer `knowledge_base` tool with `tool_data: {title, content, category, tags}`
 
-### n8n Workflow Imported via API
-- Used CF_ACCESS_CLIENT_ID/SECRET headers to bypass Cloudflare Access
-- Imported + activated `workflow-plan-approved.json` (ID: `Tz298pYvGMEVgE9E`)
-- Linked LeadNeedle Bot Telegram credential (`WrFw1VexIphfKE6K`)
+### OpenClaw Agent Wiring
+- `agent_loop.py` updated with `knowledge_base` handler
+- `scripts/reelbot-agent.service` + `scripts/deploy-agent.sh` — one-command VPS deploy
 
-### Tiered Plans (L1/L2/L3) — Major Redesign
-- **Removed** separate repurposing + personal brand LLM calls (was 5 calls, now 3)
-- Processing time roughly halved
-- Plans now generate 3 implementation levels:
-  - L1 "Note it": Just record the insight (0.25h)
-  - L2 "Build it": One practical implementation (0.5-2h)
-  - L3 "Go deep": Ambitious, cross-cutting, client-facing (2-8h)
-- Telegram summary is concise: title, theme, 3 level options with hours
-- Approve buttons: `[L1 Note it] [L2 Build it] [L3 Go deep]`
-- `approved_level` saved in metadata.json; task API filters tasks by level
-- `content_angle` field replaces separate DDB plan (one-liner if relevant)
-- Analysis prompt enhanced for multi-layer business thinking (ops → clients → product)
+### Progress Timer Fix
+- Blocking pipeline steps now use `asyncio.to_thread()` — progress message no longer stuck
+- `src/utils/processing_stats.py` — rolling average of last 20 runs, shows `~Xs estimated` at start
+- Countdown: `"Analyzing content... (step 3/4, ~25s left)"`
 
-### Key Model Changes
-- `PlanTask.level: int = 1` — which tier this task belongs to
-- `ImplementationPlan.content_angle: str` — DDB content idea
-- `ImplementationPlan.level_summaries: dict` — one-liner per level
-- Plan prompt tells LLM about our pricing model (per booked appointment, not per close)
+### Recommended Action + Approve with Notes
+- `recommended_action` field added to `ImplementationPlan` model, planner, and plan prompt
+- Telegram summary shows `*Do this:* [action]` below title
+- New `✏️ Approve w/ notes` button → prompts for conditions → saves `approval_notes` in metadata.json + approves
+
+### Shared Context Fix
+- `n8n-automations.md` marked DEPRECATED (migrated to AIAS Express backend)
+- `tfww.md` updated: n8n refs → AIAS backend
+- `reelbot.md` updated with KB, tiered plans, agent deploy info
+
+### Tests
+- 65 tests passing (was 61). New: KB handler (3), level filter (1), tiered format (1), content angle HTML (1), replaced 2 old repurposing/brand tests
 
 ## Next Steps
-- [ ] **Test tiered plans** — resend a reel and verify L1/L2/L3 output + approve flow
-- [ ] **Wire OpenClaw** — deploy `agent_loop.py` on VPS, configure REELBOT_URL + REELBOT_API_KEY
-- [ ] **Review 10 prod plans** — these are old-format plans, approve via Telegram
-- [ ] **Add knowledge_base tool** — for "save for later" L1 tasks
-- [ ] **Update plan_writer.py** — write tiered format to plan.md (currently writes old format)
-- [ ] **Update executor** — read `approved_level` from metadata and filter tasks during auto-execution
+- [ ] **Deploy + test** — push to main, send a reel, verify: recommended action line, approve with notes flow, accurate time estimate
+- [ ] **Deploy agent to VPS** — `./scripts/deploy-agent.sh` (needs SSH to 217.216.90.203)
+- [ ] **Add `recommended_action` to plan_writer.py output** — not yet in plan.md or view.html artifacts
+- [ ] **Delete dead files** — `src/services/repurposer.py`, `src/services/personal_brand.py`, `src/prompts/content_repurposing.py`, `src/prompts/personal_brand.py`
+- [ ] **Inject KB context into planner** — use `get_recent_context()` so LLM avoids duplicate insights
+- [ ] **Review old plans** — 2 plans in "review" status are pre-tiered format
 
 ## Context Notes
-- Coolify API token has `|` char — use `grep + cut -d= -f2-`, not `source`
-- CF Access bypass: `CF-Access-Client-Id` + `CF-Access-Client-Secret` headers for n8n API
+- `approval_notes` in metadata.json is saved but not yet read by executor — wire into execution log
+- `processing_stats.py` starts at 55s default, self-calibrates after first run
+- Shared context files sync to `shared-context/` in repo via pre-commit hook for Docker builds
 - Local `.env` has `ENABLE_TELEGRAM_BOT=false` — safe for dev
-- `repurposer.py` and `personal_brand.py` still exist but are no longer called — can delete later
-- 61 tests passing, deploy in progress

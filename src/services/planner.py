@@ -125,6 +125,7 @@ def generate_plan(analysis: AnalysisResult, metadata: ReelMetadata, user_context
             summary=data.get("summary", ""),
             tasks=tasks,
             total_estimated_hours=sum(t.estimated_hours for t in tasks),
+            recommended_action=data.get("recommended_action", ""),
             content_angle=data.get("content_angle", ""),
             level_summaries=data.get("level_summaries", {}),
         )

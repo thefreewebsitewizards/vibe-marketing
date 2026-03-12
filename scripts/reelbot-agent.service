@@ -1,0 +1,16 @@
+[Unit]
+Description=ReelBot Agent Loop — polls for approved plans and executes tasks
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/reelbot-agent
+ExecStart=/usr/bin/python3 agent_loop.py --watch 60
+Restart=always
+RestartSec=10
+Environment=REELBOT_URL=https://reelbot.leadneedleai.com
+EnvironmentFile=/root/reelbot-agent/.env
+
+[Install]
+WantedBy=multi-user.target

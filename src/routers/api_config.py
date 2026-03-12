@@ -12,7 +12,7 @@ from src.utils.plan_router import VALID_TARGETS, FALLBACK_MAP
 router = APIRouter(prefix="/api")
 
 _PIPELINE_STEPS = [
-    "analysis", "plan", "similarity", "repurposing", "personal_brand",
+    "analysis", "plan", "similarity",
 ]
 
 

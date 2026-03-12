@@ -159,6 +159,43 @@ def _handle_code_task(task: dict, tool_data: dict, plan_dir: str) -> str:
     return f"[claude_code] Logged for Claude Code execution: {task.get('description', '')[:150]}"
 
 
+def _handle_knowledge_base(task: dict, tool_data: dict, plan_dir: str) -> str:
+    """Save an insight to the persistent knowledge base."""
+    from src.utils.knowledge_base import add_entry
+
+    # Read plan metadata for source URL
+    source_url = ""
+    meta_path = Path(plan_dir) / "metadata.json"
+    if meta_path.exists():
+        try:
+            meta = json.loads(meta_path.read_text())
+            source_url = meta.get("source_url", "")
+        except Exception:
+            pass
+
+    # Extract reel_id from plan_dir name (format: YYYY-MM-DD_REELID)
+    reel_id = Path(plan_dir).name.split("_", 1)[-1] if "_" in Path(plan_dir).name else ""
+
+    content = tool_data.get("content", "") or task.get("description", "")
+    title = tool_data.get("title", "") or task.get("title", "")
+    category = tool_data.get("category", "")
+    tags = tool_data.get("tags", [])
+
+    if not content:
+        return "[knowledge_base] No content to save — skipped"
+
+    entry = add_entry(
+        reel_id=reel_id,
+        title=title,
+        content=content,
+        category=category,
+        tags=tags,
+        source_url=source_url,
+    )
+
+    return f"[knowledge_base] Saved: {title} (id: {entry['id']})"
+
+
 def _handle_n8n(task: dict, tool_data: dict, plan_dir: str) -> str:
     """Save n8n workflow description for manual import."""
     output_dir = Path(plan_dir) / "drafts"
@@ -192,6 +229,7 @@ _TOOL_HANDLERS = {
     "content": _handle_content,
     "claude_code": _handle_code_task,
     "n8n": _handle_n8n,
+    "knowledge_base": _handle_knowledge_base,
 }
 
 
@@ -259,6 +297,9 @@ def _notify_execution_complete(reel_id: str, plan_title: str, results: list[dict
 def execute_plan(reel_id: str, plan_dir_name: str) -> dict:
     """Execute an approved plan: auto tasks run, human tasks get notified.
 
+    Reads approved_level from metadata.json and only executes tasks
+    at or below that level (levels are cumulative: L2 includes L1).
+
     Returns summary dict with counts and results.
     """
     plan_data = load_plan_tasks(plan_dir_name)
@@ -270,8 +311,35 @@ def execute_plan(reel_id: str, plan_dir_name: str) -> dict:
     tasks = plan_data.get("tasks", [])
     plan_title = plan_data.get("title", "Untitled Plan")
 
-    auto_tasks = [(i, t) for i, t in enumerate(tasks) if classify_task(t) == "auto"]
-    human_tasks = [t for t in tasks if classify_task(t) == "human"]
+    # Read selected tasks from metadata (set during web approval)
+    selected_tasks = None
+    meta_path = settings.plans_dir / plan_dir_name / "metadata.json"
+    if meta_path.exists():
+        try:
+            with open(meta_path) as f:
+                meta = json.load(f)
+            selected_tasks = meta.get("selected_tasks")
+            # Fallback: legacy approved_level support
+            if selected_tasks is None:
+                approved_level = meta.get("approved_level")
+                if approved_level:
+                    selected_tasks = [
+                        i for i, t in enumerate(tasks)
+                        if t.get("level", 1) <= approved_level
+                    ]
+        except Exception as e:
+            logger.warning(f"Failed to read task selection: {e}")
+
+    # Filter to only selected tasks
+    if selected_tasks is not None:
+        selected_set = set(selected_tasks)
+        tasks_with_indices = [(i, t) for i, t in enumerate(tasks) if i in selected_set]
+        logger.info(f"Executing {len(tasks_with_indices)} selected tasks out of {len(tasks)}")
+    else:
+        tasks_with_indices = list(enumerate(tasks))
+
+    auto_tasks = [(i, t) for i, t in tasks_with_indices if classify_task(t) == "auto"]
+    human_tasks = [t for _, t in tasks_with_indices if classify_task(t) == "human"]
 
     update_plan_status(reel_id, PlanStatus.IN_PROGRESS)
 

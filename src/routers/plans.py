@@ -23,6 +23,11 @@ class StatusUpdate(BaseModel):
     status: PlanStatus
 
 
+class ApproveRequest(BaseModel):
+    selected_tasks: list[int]
+    notes: str = ""
+
+
 @router.get("/")
 def list_plans():
     """List all plans grouped by status."""
@@ -68,6 +73,91 @@ def update_status(reel_id: str, body: StatusUpdate, _: str = Depends(require_api
     if not updated:
         raise HTTPException(status_code=404, detail=f"Plan not found: {reel_id}")
     return {"reel_id": reel_id, "status": body.status.value}
+
+
+@router.post("/{reel_id}/approve")
+def approve_plan(reel_id: str, body: ApproveRequest):
+    """Approve a plan with selected tasks. No API key required (web UI use)."""
+    entry = find_plan_by_id(reel_id)
+    if not entry:
+        raise HTTPException(status_code=404, detail=f"Plan not found: {reel_id}")
+
+    if entry["status"] not in (PlanStatus.REVIEW.value, "review"):
+        raise HTTPException(status_code=400, detail=f"Plan is {entry['status']}, must be in review")
+
+    # Validate task indices against plan
+    plan_data = load_plan_tasks(entry["plan_dir"])
+    if not plan_data:
+        raise HTTPException(status_code=404, detail="No plan.json found")
+
+    task_count = len(plan_data.get("tasks", []))
+    invalid = [i for i in body.selected_tasks if i < 0 or i >= task_count]
+    if invalid:
+        raise HTTPException(status_code=400, detail=f"Invalid task indices: {invalid}")
+
+    if not body.selected_tasks:
+        raise HTTPException(status_code=400, detail="No tasks selected")
+
+    # Save selected tasks and notes to metadata
+    meta_path = settings.plans_dir / entry["plan_dir"] / "metadata.json"
+    if meta_path.exists():
+        meta = json.loads(meta_path.read_text())
+    else:
+        meta = {}
+
+    meta["selected_tasks"] = body.selected_tasks
+    if body.notes:
+        meta["approval_notes"] = body.notes
+    meta_path.write_text(json.dumps(meta, indent=2))
+
+    # Approve and trigger execution
+    update_plan_status(reel_id, PlanStatus.APPROVED)
+
+    from src.services.executor import execute_plan
+    import threading
+
+    thread = threading.Thread(
+        target=execute_plan,
+        args=(reel_id, entry["plan_dir"]),
+        daemon=True,
+    )
+    thread.start()
+
+    return {
+        "reel_id": reel_id,
+        "status": "approved",
+        "selected_tasks": body.selected_tasks,
+        "notes": body.notes,
+    }
+
+
+@router.post("/{reel_id}/skip")
+def skip_plan(reel_id: str):
+    """Skip/reject a plan. No API key required (web UI use)."""
+    entry = find_plan_by_id(reel_id)
+    if not entry:
+        raise HTTPException(status_code=404, detail=f"Plan not found: {reel_id}")
+
+    update_plan_status(reel_id, PlanStatus.FAILED)
+    return {"reel_id": reel_id, "status": "skipped"}
+
+
+@router.post("/{reel_id}/feedback")
+def submit_feedback(reel_id: str, body: dict):
+    """Save feedback for a plan."""
+    from src.utils.feedback import save_feedback, update_feedback_comment
+
+    rating = body.get("rating", "")
+    comment = body.get("comment", "")
+
+    if rating not in ("good", "bad", "partial"):
+        raise HTTPException(status_code=400, detail="Rating must be good, bad, or partial")
+
+    save_feedback(reel_id, rating)
+    if comment:
+        update_feedback_comment(reel_id, comment)
+
+    return {"reel_id": reel_id, "rating": rating}
 
 
 @router.get("/summary/all")

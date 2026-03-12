@@ -218,38 +218,6 @@ def test_plan_task_human_flag():
     assert task.human_reason == "Needs budget approval"
 
 
-def test_pipeline_result_repurposing_plan_optional():
-    """PipelineResult works without repurposing_plan (backward compat)."""
-    result = PipelineResult(
-        reel_id="X",
-        metadata=ReelMetadata(url="https://instagram.com/reel/X/", shortcode="X"),
-        transcript=TranscriptResult(text="test"),
-        analysis=_make_analysis(),
-        plan=ImplementationPlan(title="T", summary="S", tasks=[_make_task()]),
-    )
-    assert result.repurposing_plan is None
-
-
-def test_pipeline_result_with_repurposing_plan():
-    """PipelineResult accepts a repurposing_plan."""
-    rp = ImplementationPlan(
-        title="Repurposing: X",
-        summary="Content plan",
-        tasks=[_make_task(title="Adapted Script", requires_human=True, human_reason="Needs filming")],
-        total_estimated_hours=2.0,
-    )
-    result = PipelineResult(
-        reel_id="X",
-        metadata=ReelMetadata(url="https://instagram.com/reel/X/", shortcode="X"),
-        transcript=TranscriptResult(text="test"),
-        analysis=_make_analysis(),
-        plan=ImplementationPlan(title="T", summary="S", tasks=[_make_task()]),
-        repurposing_plan=rp,
-    )
-    assert result.repurposing_plan is not None
-    assert result.repurposing_plan.title == "Repurposing: X"
-
-
 def test_capability_manager_loads_json():
     """get_capabilities_context returns formatted text from the real capabilities.json."""
     context = get_capabilities_context()
@@ -300,45 +268,46 @@ def test_plan_writer_creates_view_html(tmp_path):
         assert "htmluser" in html
 
 
-def test_plan_writer_creates_repurposing_md(tmp_path):
-    """write_plan generates repurposing_plan.md when repurposing_plan is set."""
+def test_plan_writer_tiered_format(tmp_path):
+    """write_plan generates plan.md with tasks grouped by level."""
     with patch("src.utils.plan_writer.settings") as mock_settings:
         mock_settings.plans_dir = tmp_path
 
-        rp = ImplementationPlan(
-            title="Repurposing: RP1",
-            summary="Content repurposing plan",
-            tasks=[_make_task(title="Write adapted script", requires_human=True, human_reason="Needs filming")],
-            total_estimated_hours=1.0,
-        )
-
         result = PipelineResult(
-            reel_id="RP1",
+            reel_id="TIER1",
             status=PlanStatus.REVIEW,
             metadata=ReelMetadata(
-                url="https://instagram.com/reel/RP1/",
-                shortcode="RP1",
-                creator="rpuser",
+                url="https://instagram.com/reel/TIER1/",
+                shortcode="TIER1",
+                creator="tieruser",
             ),
             transcript=TranscriptResult(text="Test"),
             analysis=_make_analysis(),
             plan=ImplementationPlan(
-                title="Test Plan", summary="S", tasks=[_make_task()], total_estimated_hours=2.0,
+                title="Tiered Plan",
+                summary="A tiered plan",
+                tasks=[
+                    _make_task(title="Note the insight", level=1),
+                    _make_task(title="Build the widget", level=2),
+                    _make_task(title="Go deep on system", level=3, requires_human=True, human_reason="Needs budget"),
+                ],
+                total_estimated_hours=5.0,
+                content_angle="Behind the scenes of our AI pipeline",
+                level_summaries={"1": "Record it", "2": "Build it", "3": "Ship it"},
             ),
-            repurposing_plan=rp,
         )
 
         plan_dir = write_plan(result)
 
-        assert (plan_dir / "repurposing_plan.md").exists()
-        rp_md = (plan_dir / "repurposing_plan.md").read_text()
-        assert "Repurposing: RP1" in rp_md
-        assert "Write adapted script" in rp_md
-        assert "[NEEDS HUMAN]" in rp_md
-
-        # HTML should also include repurposing section
-        html = (plan_dir / "view.html").read_text()
-        assert "Content Repurposing Guide" in html
+        plan_md = (plan_dir / "plan.md").read_text()
+        assert "L1" in plan_md
+        assert "L2" in plan_md
+        assert "L3" in plan_md
+        assert "Note the insight" in plan_md
+        assert "Build the widget" in plan_md
+        assert "Go deep on system" in plan_md
+        assert "DDB Content Angle" in plan_md
+        assert "Behind the scenes" in plan_md
 
 
 def test_reel_metadata_content_type_default():
@@ -353,39 +322,6 @@ def test_reel_metadata_carousel():
         url="https://instagram.com/p/X/", shortcode="X", content_type="carousel",
     )
     assert meta.content_type == "carousel"
-
-
-def test_pipeline_result_personal_brand_plan_optional():
-    """PipelineResult works without personal_brand_plan."""
-    result = PipelineResult(
-        reel_id="X",
-        metadata=ReelMetadata(url="https://instagram.com/reel/X/", shortcode="X"),
-        transcript=TranscriptResult(text="test"),
-        analysis=_make_analysis(),
-        plan=ImplementationPlan(title="T", summary="S", tasks=[_make_task()]),
-    )
-    assert result.personal_brand_plan is None
-    assert result.similarity is None
-
-
-def test_pipeline_result_with_personal_brand_plan():
-    """PipelineResult accepts a personal_brand_plan."""
-    pb = ImplementationPlan(
-        title="DDB Content: X",
-        summary="Personal brand plan",
-        tasks=[_make_task(title="Record DDB reel", requires_human=True, human_reason="Needs filming")],
-        total_estimated_hours=1.5,
-    )
-    result = PipelineResult(
-        reel_id="X",
-        metadata=ReelMetadata(url="https://instagram.com/reel/X/", shortcode="X"),
-        transcript=TranscriptResult(text="test"),
-        analysis=_make_analysis(),
-        plan=ImplementationPlan(title="T", summary="S", tasks=[_make_task()]),
-        personal_brand_plan=pb,
-    )
-    assert result.personal_brand_plan is not None
-    assert result.personal_brand_plan.title == "DDB Content: X"
 
 
 def test_similarity_result_model():
@@ -491,44 +427,37 @@ def test_plan_writer_shows_fact_checks_expanded(tmp_path):
         assert 'collapsible" onclick="toggle(this)">Fact Checks' not in html
 
 
-def test_plan_writer_creates_personal_brand_md(tmp_path):
-    """write_plan generates personal_brand_plan.md when set."""
+def test_plan_writer_content_angle_in_html(tmp_path):
+    """write_plan includes content_angle and level_summaries in HTML view."""
     with patch("src.utils.plan_writer.settings") as mock_settings:
         mock_settings.plans_dir = tmp_path
 
-        pb = ImplementationPlan(
-            title="DDB Content: PB1",
-            summary="Personal brand content plan",
-            tasks=[_make_task(title="Record DDB reel", requires_human=True, human_reason="Needs filming")],
-            total_estimated_hours=1.0,
-        )
-
         result = PipelineResult(
-            reel_id="PB1",
+            reel_id="CA1",
             status=PlanStatus.REVIEW,
             metadata=ReelMetadata(
-                url="https://instagram.com/reel/PB1/",
-                shortcode="PB1",
-                creator="pbuser",
+                url="https://instagram.com/reel/CA1/",
+                shortcode="CA1",
+                creator="causer",
             ),
             transcript=TranscriptResult(text="Test"),
             analysis=_make_analysis(),
             plan=ImplementationPlan(
-                title="Test Plan", summary="S", tasks=[_make_task()], total_estimated_hours=2.0,
+                title="Content Angle Plan",
+                summary="Plan with DDB angle",
+                tasks=[_make_task()],
+                total_estimated_hours=2.0,
+                content_angle="How we use AI to analyze reels",
+                level_summaries={"1": "Note it", "2": "Build it", "3": "Go deep"},
             ),
-            personal_brand_plan=pb,
         )
 
         plan_dir = write_plan(result)
 
-        assert (plan_dir / "personal_brand_plan.md").exists()
-        pb_md = (plan_dir / "personal_brand_plan.md").read_text()
-        assert "DDB Content: PB1" in pb_md
-        assert "Record DDB reel" in pb_md
-
-        # HTML should include personal brand section
         html = (plan_dir / "view.html").read_text()
-        assert "Dylan Does Business" in html
+        assert "DDB Content Angle" in html
+        assert "How we use AI to analyze reels" in html
+        assert "Implementation Levels" in html
 
 
 def test_plan_writer_similarity_in_html(tmp_path):

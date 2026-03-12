@@ -29,7 +29,7 @@ CRITICAL RULES:
 
 6. CONTENT ANGLE: If the reel could inspire a DDB (Dylan Does Business) video or post, include a one-line content_angle. If not relevant, leave it empty.
 
-Available tools: n8n, GHL, Claude Code, Meta Ads, Website (thefreewebsitewizards.com), Telegram bot, sales_script API
+Available tools: n8n, GHL, Claude Code, Meta Ads, Website (thefreewebsitewizards.com), Telegram bot, sales_script API, knowledge_base
 
 WEB DESIGN TASKS: Reference tfww/web-design/ knowledge base, use our Tailwind v4 + static HTML stack, include specific CSS/classes.
 
@@ -65,6 +65,7 @@ Return JSON:
 {{
   "title": "Concise plan title (max 8 words)",
   "summary": "1 sentence — what this plan achieves",
+  "recommended_action": "1 sentence — the single most impactful thing Dylan should do based on this reel. Be specific and direct, e.g. 'Add objection handler X to AIAS sales flow' not 'Consider implementing improvements'",
   "content_angle": "DDB content idea if relevant, or empty string",
   "level_summaries": {{
     "1": "What level 1 does (1 sentence)",
@@ -104,7 +105,9 @@ Rules for tool_data — CRITICAL for automated execution:
 - For "n8n" tasks: {{"workflow_description": "...", "trigger": "webhook|schedule|manual", "steps": ["..."]}}
 - For "claude_code" tasks: {{"files_to_modify": ["path/to/file.py"], "change_description": "..."}}
 - For "website" tasks: {{"page": "homepage|about|pricing", "changes": ["..."]}}
-- Every task MUST have populated tool_data"""
+- For "knowledge_base" tasks (PREFERRED for L1): {{"title": "Short insight title", "content": "The insight or note to save", "category": "ai_automation|sales|marketing|operations|product", "tags": ["tag1", "tag2"]}}
+- Every task MUST have populated tool_data
+- L1 tasks should ALWAYS use "knowledge_base" tool unless they specifically modify an existing system"""
 
 EXISTING_PLANS_SECTION = """
 
@@ -115,6 +118,11 @@ CAPABILITIES_SECTION = """
 
 **Existing Capabilities (DO NOT rebuild — extend for new use cases):**
 {capabilities}"""
+
+KB_CONTEXT_SECTION = """
+
+**Recent Knowledge Base entries (avoid duplicating these insights):**
+{kb_context}"""
 
 FEEDBACK_SECTION = """
 
@@ -208,6 +216,12 @@ def build_plan_prompt(
             script_content=script_context,
             section_ids=script_section_ids,
         )
+
+    # Inject recent knowledge base entries to avoid duplicate insights
+    from src.utils.knowledge_base import get_recent_context
+    kb_context = get_recent_context(limit=10)
+    if kb_context:
+        user_prompt += KB_CONTEXT_SECTION.format(kb_context=kb_context)
 
     if user_context:
         user_prompt += f"\n\n**User notes (prioritize this direction):**\n{user_context}"
