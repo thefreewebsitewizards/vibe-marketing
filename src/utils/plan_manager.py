@@ -6,9 +6,7 @@ from pathlib import Path
 from loguru import logger
 
 from src.config import settings
-from src.constants import N8N_WEBHOOK_TIMEOUT
 from src.models import PlanStatus
-from src.utils.retry import retry_on_exception
 
 
 def get_index() -> dict:
@@ -98,29 +96,6 @@ def _trigger_execution(reel_id: str, plan_dir_name: str | None) -> None:
         )
         thread.start()
         logger.info(f"Executor thread started for {reel_id}")
-
-    # POST to n8n webhook if configured (non-blocking, best-effort)
-    if settings.n8n_execution_webhook:
-        try:
-            _post_n8n_webhook(reel_id, plan_dir_name)
-        except Exception as exc:
-            logger.warning(f"n8n webhook failed after retries (non-blocking): {exc}")
-
-
-@retry_on_exception(
-    retryable_exceptions=(ConnectionError, TimeoutError, OSError),
-    description="n8n webhook POST",
-)
-def _post_n8n_webhook(reel_id: str, plan_dir_name: str | None) -> None:
-    """POST to n8n webhook with retry on transient failures."""
-    import httpx
-
-    httpx.post(
-        settings.n8n_execution_webhook,
-        json={"reel_id": reel_id, "plan_dir": plan_dir_name},
-        timeout=N8N_WEBHOOK_TIMEOUT,
-    )
-    logger.info(f"n8n webhook triggered for {reel_id}")
 
 
 def get_plans_by_status(status: PlanStatus) -> list[dict]:

@@ -3,7 +3,7 @@ from pathlib import Path
 from unittest.mock import patch, MagicMock
 from src.services.executor import (
     classify_task, execute_plan,
-    _handle_sales_script, _handle_content, _handle_n8n, _handle_code_task,
+    _handle_sales_script, _handle_content, _handle_code_task,
     _handle_knowledge_base,
 )
 
@@ -135,23 +135,6 @@ class TestHandleContent:
         task = {"title": "Empty task", "deliverables": []}
         result = _handle_content(task, {}, str(tmp_path))
         assert "skipped" in result
-
-
-class TestHandleN8n:
-    def test_should_save_workflow_spec(self, tmp_path):
-        task = {
-            "title": "Lead nurture flow",
-            "description": "Create an n8n workflow for lead nurture",
-            "deliverables": ["Webhook trigger", "Email node"],
-        }
-
-        result = _handle_n8n(task, {}, str(tmp_path))
-
-        assert "Saved workflow spec" in result
-        files = list((tmp_path / "drafts").glob("n8n_*.md"))
-        assert len(files) == 1
-        content = files[0].read_text()
-        assert "lead nurture" in content.lower()
 
 
 class TestHandleCodeTask:

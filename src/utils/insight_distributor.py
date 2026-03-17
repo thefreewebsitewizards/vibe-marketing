@@ -32,10 +32,10 @@ TOPIC_ROUTING = {
         {"project": "ddb", "folder": "reel-insights", "context": "Dylan Does Business personal brand — content strategy, video production, social media growth"},
     ],
     "crm": [
-        {"project": "ghl-fix", "folder": "reel-insights", "context": "GoHighLevel CRM — pipeline management, automations, client tracking"},
+        {"project": "ghl-fix", "folder": "reel-insights", "context": "CRM — pipeline management, automations, client tracking"},
     ],
     "automation": [
-        {"project": "n8n-automations", "folder": "reel-insights", "context": "n8n workflow automations — API integrations, webhook flows, backend automation"},
+        {"project": "n8n-automations", "folder": "reel-insights", "context": "Backend automations — API integrations, webhook flows, workflow automation"},
     ],
     "appointment_setting": [
         {"project": "aias", "folder": "reel-insights", "context": "AI appointment setting via iMessage/SMS — lead qualification, booking, follow-up"},

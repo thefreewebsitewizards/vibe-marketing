@@ -80,7 +80,7 @@ Return JSON:
     {{
       "area": "What area this applies to (e.g. lead nurture, ad copy, onboarding)",
       "recommendation": "Specific action to take",
-      "target_system": "ghl|n8n|sales_script|website|meta_ads|telegram|general",
+      "target_system": "sales_script|website|meta_ads|telegram|general",
       "urgency": "high|medium|low"
     }}
   ],
@@ -123,8 +123,8 @@ Rules for routing_target — pick the SINGLE best folder for this reel's content
 - "claude-upgrades" = AI tool improvements, Claude/LLM workflow upgrades, prompt engineering
 - "ddb" = Dylan Does Business — social media content, personal brand, content creation
 - "tfww" = The Free Website Wizards — sales, marketing, business ops, client acquisition, email/SMS
-- "n8n-automations" = n8n workflow automations, API integrations, backend automations
-- "ghl-fix" = GoHighLevel configuration, CRM setup, pipeline/funnel fixes
+- "n8n-automations" = Backend automations, API integrations, workflow automation
+- "ghl-fix" = CRM configuration, pipeline/funnel setup
 - "aias" = AI appointment setting — AI chatbots, conversational AI, booking flows
 - If the reel spans multiple areas, pick the PRIMARY one that best matches the core topic
 
@@ -245,7 +245,7 @@ Return JSON with the same schema as a reel analysis. Adapt the fields:
     {{
       "area": "What area this applies to",
       "recommendation": "Specific action",
-      "target_system": "ghl|n8n|sales_script|website|meta_ads|telegram|general",
+      "target_system": "sales_script|website|meta_ads|telegram|general",
       "urgency": "high|medium|low"
     }}
   ],
@@ -269,8 +269,8 @@ Rules for routing_target — pick the SINGLE best folder for this carousel's con
 - "claude-upgrades" = AI tool improvements, Claude/LLM workflow upgrades, prompt engineering
 - "ddb" = Dylan Does Business — social media content, personal brand, content creation
 - "tfww" = The Free Website Wizards — sales, marketing, business ops, client acquisition, email/SMS
-- "n8n-automations" = n8n workflow automations, API integrations, backend automations
-- "ghl-fix" = GoHighLevel configuration, CRM setup, pipeline/funnel fixes
+- "n8n-automations" = Backend automations, API integrations, workflow automation
+- "ghl-fix" = CRM configuration, pipeline/funnel setup
 - "aias" = AI appointment setting — AI chatbots, conversational AI, booking flows
 - If the carousel spans multiple areas, pick the PRIMARY one that best matches the core topic
 

@@ -19,7 +19,6 @@ from src.services.tool_handlers import (
     handle_content as _handle_content,
     handle_code_task as _handle_code_task,
     handle_knowledge_base as _handle_knowledge_base,
-    handle_n8n as _handle_n8n,
 )
 
 

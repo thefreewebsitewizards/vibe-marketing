@@ -1,6 +1,6 @@
 """Individual tool handler functions for plan task execution.
 
-Each handler processes a specific tool type (sales_script, content, n8n, etc.)
+Each handler processes a specific tool type (sales_script, content, etc.)
 and returns a status string describing what was done.
 """
 import json
@@ -117,30 +117,6 @@ def handle_knowledge_base(task: dict, tool_data: dict, plan_dir: str) -> str:
     return f"[knowledge_base] Saved: {title} (id: {entry['id']})"
 
 
-def handle_n8n(task: dict, tool_data: dict, plan_dir: str) -> str:
-    """Save n8n workflow description for manual import."""
-    output_dir = Path(plan_dir) / "drafts"
-    output_dir.mkdir(exist_ok=True)
-
-    filename = f"n8n_{task.get('title', 'workflow')[:40]}.md".replace(" ", "_").lower()
-    filepath = output_dir / filename
-
-    lines = [
-        f"# n8n Workflow: {task.get('title', 'Untitled')}",
-        "",
-        "## Description",
-        task.get("description", ""),
-        "",
-        "## Deliverables",
-    ]
-    for d in task.get("deliverables", []):
-        lines.append(f"- {d}")
-
-    filepath.write_text("\n".join(lines))
-    logger.info(f"Saved n8n workflow spec to {filepath}")
-    return f"[n8n] Saved workflow spec to drafts/{filename}"
-
-
 # Tool handler dispatch table
 TOOL_HANDLERS = {
     "sales_script": handle_sales_script,
@@ -149,6 +125,5 @@ TOOL_HANDLERS = {
     "social_media": handle_content,
     "content": handle_content,
     "claude_code": handle_code_task,
-    "n8n": handle_n8n,
     "knowledge_base": handle_knowledge_base,
 }

@@ -12,11 +12,6 @@
   ],
   "integrations": [
     {
-      "name": "n8n",
-      "status": "active",
-      "host": "n8n.leadneedleai.com"
-    },
-    {
       "name": "ghl",
       "status": "active",
       "features": [

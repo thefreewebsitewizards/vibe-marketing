@@ -222,7 +222,6 @@ def test_capability_manager_loads_json():
     """get_capabilities_context returns formatted text from the real capabilities.json."""
     context = get_capabilities_context()
     assert "ghl" in context
-    assert "n8n" in context
     assert "MCP Servers" in context
     assert "Active Integrations" in context
 

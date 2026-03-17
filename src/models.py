@@ -50,7 +50,7 @@ class DetailedNotes(BaseModel):
 class BusinessApplication(BaseModel):
     area: str = ""
     recommendation: str = ""
-    target_system: str = ""  # ghl, n8n, sales_script, website, meta_ads, telegram
+    target_system: str = ""  # sales_script, website, meta_ads, telegram, general
     urgency: str = "medium"  # high, medium, low
 
 

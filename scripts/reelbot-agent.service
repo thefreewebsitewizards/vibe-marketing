@@ -4,12 +4,14 @@ After=network.target
 
 [Service]
 Type=simple
-User=root
+User=openclaw
 WorkingDirectory=/root/reelbot-agent
 ExecStart=/usr/bin/python3 agent_loop.py --watch 60
 Restart=always
 RestartSec=10
 Environment=REELBOT_URL=https://reelbot.leadneedleai.com
+Environment=HOME=/home/openclaw
+Environment=PATH=/home/openclaw/.npm-global/bin:/home/openclaw/.local/bin:/usr/local/bin:/usr/bin:/bin
 EnvironmentFile=/root/reelbot-agent/.env
 
 [Install]
