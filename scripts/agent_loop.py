@@ -97,10 +97,60 @@ def _run_git(args: list[str], cwd: str) -> subprocess.CompletedProcess:
     )
 
 
+MAX_RETRIES = 2  # try once, retry once on test failure
+
+# Test commands per repo (run from repo root)
+TEST_COMMANDS = {
+    "reelbot": ["python3", "-m", "pytest", "tests/", "-q", "--tb=short"],
+    "aias": ["npm", "test", "--", "--silent"],
+    "tfww-website": None,  # no test suite
+    "ddb": ["python3", "-m", "pytest", "tests/", "-q", "--tb=short"],
+}
+
+
+def _detect_test_cmd(repo_path: str) -> list[str] | None:
+    """Detect test command from repo name."""
+    repo_name = Path(repo_path).name
+    return TEST_COMMANDS.get(repo_name)
+
+
+def _run_tests(repo_path: str) -> tuple[bool, str]:
+    """Run the test suite for a repo. Returns (passed, output)."""
+    test_cmd = _detect_test_cmd(repo_path)
+    if not test_cmd:
+        log(f"    No test suite for {Path(repo_path).name} -- skipping validation")
+        return True, "no test suite"
+
+    log(f"    Running tests: {' '.join(test_cmd)}")
+    try:
+        result = subprocess.run(
+            test_cmd,
+            cwd=repo_path,
+            capture_output=True,
+            text=True,
+            timeout=120,
+        )
+    except subprocess.TimeoutExpired:
+        return False, "tests timed out after 120s"
+
+    output = result.stdout[-1000:] if len(result.stdout) > 1000 else result.stdout
+    if result.returncode == 0:
+        log(f"    Tests passed")
+        return True, output
+    else:
+        log(f"    Tests failed (exit {result.returncode})")
+        stderr = result.stderr[-500:] if len(result.stderr) > 500 else result.stderr
+        return False, f"{output}\n{stderr}"
+
+
 def execute_claude_code(
     task: dict, reel_id: str, task_index: int, routing_target: str,
 ) -> tuple[bool, str]:
-    """Run Claude Code CLI on a task. Returns (success, notes)."""
+    """Run Claude Code CLI on a task with test validation and auto-merge.
+
+    Flow: make changes -> run tests -> pass = merge to main, fail = retry once.
+    Returns (success, notes).
+    """
     repo_path = REPO_PATHS.get(routing_target, "")
     if not repo_path:
         return False, f"[claude_code] Unknown routing target '{routing_target}'"
@@ -114,28 +164,14 @@ def execute_claude_code(
     files_to_modify = tool_data.get("files_to_modify", [])
     change_description = tool_data.get("change_description", "")
 
-    branch_name = f"reelbot/{reel_id}-task-{task_index}"
-
-    # 1. Checkout main and pull latest
-    checkout = _run_git(["checkout", "main"], cwd=repo_path)
-    if checkout.returncode != 0:
-        return False, f"[claude_code] git checkout main failed: {checkout.stderr.strip()}"
-
+    # Pull latest main
+    _run_git(["checkout", "main"], cwd=repo_path)
     pull = _run_git(["pull", "origin", "main"], cwd=repo_path)
     if pull.returncode != 0:
         return False, f"[claude_code] git pull failed: {pull.stderr.strip()}"
 
-    # 2. Create feature branch
-    branch = _run_git(["checkout", "-b", branch_name], cwd=repo_path)
-    if branch.returncode != 0:
-        # Branch may already exist -- try switching to it
-        switch = _run_git(["checkout", branch_name], cwd=repo_path)
-        if switch.returncode != 0:
-            return False, f"[claude_code] Failed to create branch {branch_name}: {branch.stderr.strip()}"
-
-    # 3. Build prompt
     files_str = ", ".join(files_to_modify) if files_to_modify else "Determine from task description"
-    prompt = (
+    base_prompt = (
         "You are executing a task from a ReelBot plan.\n\n"
         f"Task: {title}\n"
         f"Description: {description}\n"
@@ -145,113 +181,121 @@ def execute_claude_code(
         "Do NOT push or create PRs -- that will be handled externally."
     )
 
-    # 4. Run Claude Code CLI
-    log(f"    Running Claude Code in {repo_path} (timeout: {CLAUDE_TIMEOUT}s)")
-    try:
-        result = subprocess.run(
-            [
-                CLAUDE_CMD, "-p", prompt,
-                "--cwd", repo_path,
-                "--allowedTools", "Edit,Write,Read,Bash,Glob,Grep",
-                "--max-turns", "15",
-            ],
-            capture_output=True,
-            text=True,
-            timeout=CLAUDE_TIMEOUT,
-        )
-    except subprocess.TimeoutExpired:
+    for attempt in range(1, MAX_RETRIES + 1):
+        log(f"    Attempt {attempt}/{MAX_RETRIES}")
+
+        # Create a fresh branch for each attempt
+        branch_name = f"reelbot/{reel_id}-task-{task_index}"
+        if attempt > 1:
+            branch_name += f"-retry{attempt}"
+
+        # Reset to main before each attempt
         _run_git(["checkout", "main"], cwd=repo_path)
-        return False, f"[claude_code] Claude Code timed out after {CLAUDE_TIMEOUT}s"
+        _run_git(["branch", "-D", branch_name], cwd=repo_path)  # clean up if exists
+        _run_git(["checkout", "-b", branch_name], cwd=repo_path)
 
-    claude_stdout = result.stdout[-2000:] if len(result.stdout) > 2000 else result.stdout
-    claude_stderr = result.stderr[-500:] if len(result.stderr) > 500 else result.stderr
+        # Build prompt (include test failure context on retry)
+        prompt = base_prompt
+        if attempt > 1:
+            prompt += (
+                f"\n\nIMPORTANT: Previous attempt failed tests. Here is the test output:\n"
+                f"```\n{test_output[-1500:]}\n```\n"
+                f"Fix the issues and make the tests pass."
+            )
 
-    if result.returncode != 0:
-        log(f"    Claude Code failed (exit {result.returncode})")
-        _run_git(["checkout", "main"], cwd=repo_path)
-        return False, (
-            f"[claude_code] Claude Code failed (exit {result.returncode})\n"
-            f"stderr: {claude_stderr}\n"
-            f"stdout (tail): {claude_stdout[-500:]}"
-        )
+        # Run Claude Code
+        log(f"    Running Claude Code in {repo_path} (timeout: {CLAUDE_TIMEOUT}s)")
+        try:
+            result = subprocess.run(
+                [
+                    CLAUDE_CMD, "-p", prompt,
+                    "--cwd", repo_path,
+                    "--allowedTools", "Edit,Write,Read,Bash,Glob,Grep",
+                    "--max-turns", "15",
+                ],
+                capture_output=True,
+                text=True,
+                timeout=CLAUDE_TIMEOUT,
+            )
+        except subprocess.TimeoutExpired:
+            _run_git(["checkout", "main"], cwd=repo_path)
+            if attempt == MAX_RETRIES:
+                return False, f"[claude_code] Timed out after {CLAUDE_TIMEOUT}s (attempt {attempt})"
+            continue
 
-    # 5. Check if any commits were made on the branch
-    diff_check = _run_git(["log", "main..HEAD", "--oneline"], cwd=repo_path)
-    if not diff_check.stdout.strip():
-        log(f"    Claude Code ran but made no commits")
-        _run_git(["checkout", "main"], cwd=repo_path)
-        return False, "[claude_code] Claude Code ran successfully but made no commits"
+        if result.returncode != 0:
+            log(f"    Claude Code failed (exit {result.returncode})")
+            stderr = result.stderr[-500:] if len(result.stderr) > 500 else result.stderr
+            _run_git(["checkout", "main"], cwd=repo_path)
+            if attempt == MAX_RETRIES:
+                return False, f"[claude_code] Failed (exit {result.returncode}): {stderr}"
+            continue
 
-    commit_count = len(diff_check.stdout.strip().splitlines())
+        # Check for commits
+        diff_check = _run_git(["log", "main..HEAD", "--oneline"], cwd=repo_path)
+        if not diff_check.stdout.strip():
+            _run_git(["checkout", "main"], cwd=repo_path)
+            if attempt == MAX_RETRIES:
+                return False, "[claude_code] No commits made"
+            continue
 
-    # 6. Push the branch
-    push = _run_git(["push", "-u", "origin", branch_name], cwd=repo_path)
-    if push.returncode != 0:
-        log(f"    git push failed: {push.stderr.strip()}")
-        _run_git(["checkout", "main"], cwd=repo_path)
-        return False, f"[claude_code] git push failed: {push.stderr.strip()}"
+        commit_count = len(diff_check.stdout.strip().splitlines())
 
-    # 7. Create PR via gh CLI
-    pr_title = f"[ReelBot] {title}"
-    pr_body = (
-        f"## Summary\n\n"
-        f"{description}\n\n"
-        f"## Source\n\n"
-        f"Auto-generated from ReelBot plan `{reel_id}`, task {task_index}.\n\n"
-        f"**Commits:** {commit_count}\n"
-        f"**Routing target:** {routing_target}\n\n"
-        f"---\n"
-        f"*This PR was created automatically by the ReelBot agent loop.*"
-    )
+        # Run tests
+        tests_passed, test_output = _run_tests(repo_path)
 
-    try:
-        pr_result = subprocess.run(
-            [
-                "gh", "pr", "create",
-                "--title", pr_title,
-                "--body", pr_body,
-                "--head", branch_name,
-            ],
-            cwd=repo_path,
-            capture_output=True,
-            text=True,
-            timeout=30,
-        )
-    except subprocess.TimeoutExpired:
-        pr_result = None
+        if tests_passed:
+            # Merge to main
+            _run_git(["checkout", "main"], cwd=repo_path)
+            merge = _run_git(["merge", "--ff-only", branch_name], cwd=repo_path)
+            if merge.returncode != 0:
+                # ff-only failed, try regular merge
+                merge = _run_git(["merge", branch_name, "-m", f"Merge {branch_name}"], cwd=repo_path)
 
-    pr_url = ""
-    if pr_result and pr_result.returncode == 0:
-        pr_url = pr_result.stdout.strip()
-        log(f"    PR created: {pr_url}")
-    else:
-        err = pr_result.stderr.strip() if pr_result else "timeout"
-        log(f"    PR creation failed: {err}")
+            if merge.returncode != 0:
+                return False, f"[claude_code] Merge failed: {merge.stderr.strip()}"
 
-    # 8. Go back to main
-    _run_git(["checkout", "main"], cwd=repo_path)
+            # Push main
+            push = _run_git(["push", "origin", "main"], cwd=repo_path)
+            if push.returncode != 0:
+                return False, f"[claude_code] Push failed: {push.stderr.strip()}"
 
-    # 9. Build result notes
-    notes = f"[claude_code] Executed successfully ({commit_count} commit(s))"
-    if pr_url:
-        notes += f" | PR: {pr_url}"
+            # Clean up branch
+            _run_git(["branch", "-d", branch_name], cwd=repo_path)
 
-    # 10. Send Telegram notification
-    if pr_url:
-        send_telegram(
-            f"*ReelBot Code Task Completed*\n\n"
-            f"*{title}*\n"
-            f"Branch: `{branch_name}`\n"
-            f"PR: {pr_url}"
-        )
-    else:
-        send_telegram(
-            f"*ReelBot Code Task Completed*\n\n"
-            f"*{title}*\n"
-            f"Branch: `{branch_name}` pushed (PR creation failed)"
-        )
+            notes = f"[claude_code] Done -- {commit_count} commit(s) merged to main"
+            send_telegram(
+                f"*ReelBot Task Auto-Merged*\n\n"
+                f"*{title}*\n"
+                f"Repo: `{Path(repo_path).name}`\n"
+                f"Commits: {commit_count}\n"
+                f"Tests: passed"
+            )
+            return True, notes
 
-    return True, notes
+        else:
+            # Tests failed
+            log(f"    Tests failed on attempt {attempt}")
+            if attempt == MAX_RETRIES:
+                # Final attempt failed -- leave branch for debugging, don't merge
+                _run_git(["checkout", "main"], cwd=repo_path)
+                notes = (
+                    f"[claude_code] Tests failed after {MAX_RETRIES} attempts\n"
+                    f"Branch: {branch_name}\n"
+                    f"Test output: {test_output[-500:]}"
+                )
+                send_telegram(
+                    f"*ReelBot Task Failed Tests*\n\n"
+                    f"*{title}*\n"
+                    f"Repo: `{Path(repo_path).name}`\n"
+                    f"Attempts: {MAX_RETRIES}\n"
+                    f"Branch `{branch_name}` left for debugging"
+                )
+                return False, notes
+            # Reset for retry -- test_output will be fed into next prompt
+            _run_git(["checkout", "main"], cwd=repo_path)
+
+    return False, "[claude_code] Unexpected exit from retry loop"
 
 
 def handle_task(reel_id: str, task: dict, plan: dict) -> bool:
