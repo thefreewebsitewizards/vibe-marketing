@@ -3,7 +3,7 @@ from pathlib import Path
 from unittest.mock import patch, MagicMock
 from src.services.executor import (
     classify_task, execute_plan,
-    _handle_sales_script, _handle_content, _handle_code_task,
+    _handle_sales_script, _handle_content,
     _handle_knowledge_base,
 )
 
@@ -30,12 +30,15 @@ def test_execute_plan_splits_tasks(tmp_path):
         "tasks": [
             {"title": "Auto task", "description": "do thing", "priority": "high",
              "estimated_hours": 1.0, "deliverables": [], "dependencies": [],
-             "tools": ["claude_code"], "requires_human": False, "human_reason": ""},
+             "tools": ["knowledge_base"], "requires_human": False, "human_reason": ""},
             {"title": "Human task", "description": "approve spend", "priority": "high",
              "estimated_hours": 1.0, "deliverables": [], "dependencies": [],
              "tools": ["meta_ads"], "requires_human": True, "human_reason": "Budget needed"},
+            {"title": "Deferred task", "description": "code change", "priority": "high",
+             "estimated_hours": 2.0, "deliverables": [], "dependencies": [],
+             "tools": ["claude_code"], "requires_human": False, "human_reason": ""},
         ],
-        "total_estimated_hours": 2.0,
+        "total_estimated_hours": 4.0,
     }
     plan_dir = tmp_path / "2026-03-10_TEST"
     plan_dir.mkdir()
@@ -45,12 +48,14 @@ def test_execute_plan_splits_tasks(tmp_path):
     with patch("src.services.executor.settings") as mock_settings, \
          patch("src.services.executor._notify_human_tasks") as mock_notify, \
          patch("src.services.executor._notify_execution_complete"), \
-         patch("src.services.executor.update_plan_status"):
+         patch("src.services.executor.update_plan_status"), \
+         patch("src.services.tool_handlers.handle_knowledge_base", return_value="[knowledge_base] Saved"):
         mock_settings.plans_dir = tmp_path
         result = execute_plan("TEST", "2026-03-10_TEST")
 
-    assert result["auto_count"] == 1
-    assert result["human_count"] == 1
+    assert result["auto_count"] == 1  # knowledge_base task
+    assert result["human_count"] == 1  # meta_ads human task
+    # claude_code task is deferred, not counted as auto or human
     mock_notify.assert_called_once()
 
 
@@ -137,11 +142,14 @@ class TestHandleContent:
         assert "skipped" in result
 
 
-class TestHandleCodeTask:
-    def test_should_log_task(self):
-        task = {"title": "Fix bug", "description": "Fix the login bug in auth.py"}
-        result = _handle_code_task(task, {}, "/tmp/plan")
-        assert "Logged for Claude Code" in result
+class TestClassifyTaskDeferred:
+    def test_should_classify_claude_code_as_deferred(self):
+        task = {"tools": ["claude_code"], "requires_human": False}
+        assert classify_task(task) == "deferred"
+
+    def test_should_classify_regular_tool_as_auto(self):
+        task = {"tools": ["knowledge_base"], "requires_human": False}
+        assert classify_task(task) == "auto"
 
 
 class TestHandleKnowledgeBase:

@@ -17,15 +17,20 @@ from src.services.tool_handlers import (
     TOOL_HANDLERS as _TOOL_HANDLERS,
     handle_sales_script as _handle_sales_script,
     handle_content as _handle_content,
-    handle_code_task as _handle_code_task,
     handle_knowledge_base as _handle_knowledge_base,
 )
 
+# Tools that are deferred to the VPS agent loop (not executed server-side)
+_DEFERRED_TOOLS = {"claude_code"}
+
 
 def classify_task(task: dict) -> str:
-    """Classify a task as 'auto' or 'human'."""
+    """Classify a task as 'auto', 'human', or 'deferred'."""
     if task.get("requires_human", False):
         return "human"
+    tools = task.get("tools", [])
+    if any(t in _DEFERRED_TOOLS for t in tools):
+        return "deferred"
     return "auto"
 
 
@@ -191,6 +196,10 @@ def execute_plan(reel_id: str, plan_dir_name: str) -> dict:
 
     auto_tasks = [(i, t) for i, t in tasks_with_indices if classify_task(t) == "auto"]
     human_tasks = [t for _, t in tasks_with_indices if classify_task(t) == "human"]
+    deferred_tasks = [t for _, t in tasks_with_indices if classify_task(t) == "deferred"]
+
+    if deferred_tasks:
+        logger.info(f"{len(deferred_tasks)} task(s) deferred to VPS agent loop (claude_code)")
 
     update_plan_status(reel_id, PlanStatus.IN_PROGRESS)
 
@@ -214,6 +223,7 @@ def execute_plan(reel_id: str, plan_dir_name: str) -> dict:
         "executed_at": datetime.now().isoformat(),
         "auto_results": results,
         "human_tasks_pending": [t.get("title") for t in human_tasks],
+        "deferred_tasks_pending": [t.get("title") for t in deferred_tasks],
     }, indent=2))
 
     if human_tasks:
@@ -222,8 +232,8 @@ def execute_plan(reel_id: str, plan_dir_name: str) -> dict:
     _notify_execution_complete(reel_id, plan_title, results, len(human_tasks))
 
     all_auto_passed = all(r["status"] == "completed" for r in results)
-    if human_tasks:
-        pass  # Keep in_progress -- waiting on human
+    if human_tasks or deferred_tasks:
+        pass  # Keep in_progress -- waiting on human or agent loop
     elif all_auto_passed:
         update_plan_status(reel_id, PlanStatus.COMPLETED)
     else:

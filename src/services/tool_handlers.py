@@ -77,10 +77,6 @@ def handle_content(task: dict, tool_data: dict, plan_dir: str) -> str:
     return f"[content] Saved {len(drafts)} draft(s) to drafts/{filename}"
 
 
-def handle_code_task(task: dict, tool_data: dict, plan_dir: str) -> str:
-    """Log code tasks -- these need Claude Code to execute."""
-    return f"[claude_code] Logged for Claude Code execution: {task.get('description', '')[:150]}"
-
 
 def handle_knowledge_base(task: dict, tool_data: dict, plan_dir: str) -> str:
     """Save an insight to the persistent knowledge base."""
@@ -124,6 +120,6 @@ TOOL_HANDLERS = {
     "email": handle_content,
     "social_media": handle_content,
     "content": handle_content,
-    "claude_code": handle_code_task,
     "knowledge_base": handle_knowledge_base,
+    # NOTE: claude_code is NOT here — it's deferred to the VPS agent loop
 }

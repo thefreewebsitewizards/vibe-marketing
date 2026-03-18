@@ -63,10 +63,15 @@ def send_telegram(message: str) -> None:
         log(f"  Telegram notification failed: {e}")
 
 
-def get_approved_plans() -> list[dict]:
-    resp = httpx.get(f"{BASE_URL}/plans/approved", headers=HEADERS, timeout=10)
+def get_actionable_plans() -> list[dict]:
+    """Get plans that may have pending tasks (approved or in_progress)."""
+    resp = httpx.get(f"{BASE_URL}/plans/", headers=HEADERS, timeout=10)
     resp.raise_for_status()
-    return resp.json()
+    data = resp.json()
+    plans = []
+    for status in ("approved", "in_progress"):
+        plans.extend(data.get(status, []))
+    return plans
 
 
 def get_tasks(reel_id: str) -> dict:
@@ -389,12 +394,12 @@ def handle_task(reel_id: str, task: dict, plan: dict) -> bool:
 
 def run_once() -> int:
     """Single pass over approved plans. Returns count of tasks handled."""
-    plans = get_approved_plans()
+    plans = get_actionable_plans()
     if not plans:
-        log("No approved plans found")
+        log("No actionable plans found")
         return 0
 
-    log(f"Found {len(plans)} approved plan(s)")
+    log(f"Found {len(plans)} actionable plan(s)")
     total_handled = 0
 
     for plan in plans:
