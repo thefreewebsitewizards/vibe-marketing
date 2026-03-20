@@ -86,6 +86,8 @@ def _download_ytdlp(url: str, shortcode: str, output_dir: Path) -> tuple[Path | 
         creator = info.get("uploader", "") or info.get("channel", "")
         caption = info.get("description", "") or info.get("title", "")
         duration = info.get("duration", 0.0) or 0.0
+        raw_date = info.get("upload_date", "") or ""
+        upload_date = f"{raw_date[:4]}-{raw_date[4:6]}-{raw_date[6:8]}" if len(raw_date) == 8 else ""
         like_count = info.get("like_count", 0) or 0
         comment_count = info.get("comment_count", 0) or 0
         for c in (info.get("comments") or [])[:10]:
@@ -101,7 +103,8 @@ def _download_ytdlp(url: str, shortcode: str, output_dir: Path) -> tuple[Path | 
         metadata = ReelMetadata(
             url=url, shortcode=shortcode, creator=creator,
             caption=caption, duration=0.0, content_type="carousel",
-            like_count=like_count, comment_count=comment_count, comments=comments,
+            upload_date=upload_date, like_count=like_count,
+            comment_count=comment_count, comments=comments,
         )
         logger.info(f"Downloaded carousel via yt-dlp: {len(image_files)} images by {creator}")
         return image_files, metadata
@@ -117,7 +120,7 @@ def _download_ytdlp(url: str, shortcode: str, output_dir: Path) -> tuple[Path | 
 
     metadata = ReelMetadata(
         url=url, shortcode=shortcode, creator=creator,
-        caption=caption, duration=duration,
+        caption=caption, duration=duration, upload_date=upload_date,
         like_count=like_count, comment_count=comment_count, comments=comments,
     )
     logger.info(f"Downloaded via yt-dlp: {output_path} ({duration:.1f}s, by {creator}, {len(comments)} comments)")

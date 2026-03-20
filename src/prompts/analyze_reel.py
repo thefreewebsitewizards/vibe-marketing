@@ -45,6 +45,7 @@ USER_TEMPLATE = """Analyze this Instagram Reel transcript for actionable busines
 **Creator:** {creator}
 **Caption:** {caption}
 **Duration:** {duration:.0f}s
+**Posted:** {upload_date}
 **Engagement:** {like_count} likes, {comment_count} comments
 {comments_section}
 **Transcript:**
@@ -182,6 +183,11 @@ Rules for reality_checks — this is NOT literal fact-checking, it's "is this ac
 - "misleading" = actively bad advice, creator has financial incentive to mislead, or comments call BS
 - USE AUDIENCE COMMENTS as evidence. If commenters share success stories → solid. If they push back → questionable
 - If the creator is selling a course/product related to the advice, note that bias
+- RECENCY MATTERS: Check the post date. Different spaces move at different speeds:
+  - AI/tech: 3+ months old = likely outdated tools/APIs/models. Flag newer alternatives
+  - Sales/mindset: Principles are more evergreen, but specific tactics (platforms, pricing) can shift
+  - Marketing: Algorithms and platform rules change frequently, 6+ months = check for updates
+  - If the video recommends a specific tool, API, or platform version, note whether a newer/better option exists now
 - If no claims worth checking, return an empty array
 - Maximum 3 reality checks"""
 
@@ -304,6 +310,7 @@ def build_analysis_prompt(
         creator=metadata.creator or "Unknown",
         caption=metadata.caption or "No caption",
         duration=metadata.duration,
+        upload_date=metadata.upload_date or "Unknown",
         like_count=metadata.like_count,
         comment_count=metadata.comment_count,
         comments_section=_format_comments(metadata),
@@ -368,6 +375,7 @@ def build_vision_analysis_prompt(
         creator=metadata.creator or "Unknown",
         caption=metadata.caption or "No caption",
         duration=metadata.duration,
+        upload_date=metadata.upload_date or "Unknown",
         like_count=metadata.like_count,
         comment_count=metadata.comment_count,
         comments_section=_format_comments(metadata),

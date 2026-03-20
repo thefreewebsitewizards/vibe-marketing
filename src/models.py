@@ -34,6 +34,7 @@ class ReelMetadata(BaseModel):
     caption: str = ""
     duration: float = 0.0
     content_type: str = "reel"  # reel or carousel
+    upload_date: str = ""  # YYYY-MM-DD
     like_count: int = 0
     comment_count: int = 0
     comments: list[dict] = []  # [{"author": "...", "text": "..."}]
