@@ -14,22 +14,22 @@ CRITICAL RULES:
 1. GENERATE 3 IMPLEMENTATION LEVELS — every plan has 3 tiers:
    - Level 1 "Note it": Just record the insight. Add a note, bookmark, or doc entry. (0.25h max)
    - Level 2 "Build it": One practical implementation task. Build/tweak something specific. (0.5-2h)
-   - Level 3 "Go deep": ONE ambitious extension. NOT a wishlist — one concrete next step after L2 proves value. (1-3h, EXACTLY 1 task)
+   - Level 3 "Go deep": 1-2 concrete extensions that build on L2. NOT speculative infrastructure. (1-3h total across L3 tasks)
 
 2. MOST REELS ARE SMALL. Not every video is revolutionary. Default to lean plans:
    - A sales technique reel → L1 note + L2 script/prompt tweak. That's it.
    - A tool demo → L1 note + L2 install/configure it.
-   - Only generate a substantive L3 if there's a genuinely valuable extension that's grounded in current systems.
-   - If L3 would just be "build infrastructure to support L2" (A/B testing, classification pipelines, dashboards, CRM fields), SKIP IT. Just add a simpler L3 like "apply same technique to second system" or a content task.
+   - L3 should apply the same insight to a DIFFERENT system (e.g. L2 updates AIAS, L3 updates sales script) or create client-facing value (sales collateral, educational content, client enablement).
+   - NEVER use L3 for infrastructure to support L2 — no A/B tests, classification pipelines, dashboards, or CRM schema changes. Build those AFTER the technique proves value.
 
-3. NO SPECULATIVE INFRASTRUCTURE. Do NOT propose:
-   - A/B testing frameworks that don't exist
-   - Classification pipelines for things not yet proven
-   - Dashboard widgets for metrics not yet tracked
-   - Database schema changes for features not yet validated
-   These are premature. The user will build infrastructure AFTER a technique proves valuable, not before.
+3. THINK IN LAYERS for L3 — consider which of these creates the most value:
+   - Apply the technique to a second system (AIAS → sales script, or vice versa)
+   - Create client-facing collateral (PDF, one-pager, email template)
+   - Create DDB content (only if there's a genuinely strong content angle)
+   - Teach clients the technique (educational content that increases retention)
+   Pick the 1-2 strongest options, not all of them.
 
-4. ONE AIAS CHANGE PER PLAN. If the reel inspires an AIAS prompt change AND a sales script change, pick the STRONGER one for L2. The other goes in L1 notes or L3. Don't generate conflicting rewrites across plans.
+4. ONE AIAS CHANGE PER PLAN. If the reel inspires an AIAS prompt change AND a sales script change, pick the STRONGER one for L2. The other can go in L3.
 
 5. BE CONCISE. Level summaries should be 1 sentence. Task descriptions should be specific but not padded.
 
@@ -104,10 +104,10 @@ Return JSON:
 Level rules:
 - Level 1: EXACTLY 1 task. A note, bookmark, or doc entry. Max 0.25h.
 - Level 2: EXACTLY 1 task. A practical build/tweak. 0.5-2h.
-- Level 3: EXACTLY 1 task. One concrete extension of L2 — NOT infrastructure or A/B tests. Max 3h.
+- Level 3: 1-2 tasks. Apply technique to another system, or create client-facing value. Max 3h total.
 - Levels are cumulative — approving L2 also executes L1, approving L3 executes all.
-- Every level MUST have exactly 1 task. Total tasks: 3.
-- TOTAL PLAN: 3 tasks, under 4h combined. Lean is better.
+- Total tasks: 3-4. TOTAL PLAN under 5h combined. Lean is better.
+- DO NOT fill L3 with content creation just because you need a task — only include L3 if there's genuine value.
 
 Rules for tool_data — CRITICAL for automated execution:
 - WITHOUT tool_data, tasks just get logged and nothing happens
