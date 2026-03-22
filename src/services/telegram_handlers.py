@@ -49,18 +49,34 @@ INSTAGRAM_PATTERN = re.compile(r"instagram\.com/(reel|reels|p)/")
 # Track last processed reel per chat for quick approve
 _last_reel: dict[int, str] = {}
 
-# Message log for debugging
-_CHAT_LOG = Path(settings.plans_dir) / "_chat_log.jsonl"
+# Message logs for debugging
+_CHAT_LOG_JSONL = Path(settings.plans_dir) / "_chat_log.jsonl"
+_CHAT_LOG_TXT = Path(__file__).resolve().parent.parent.parent / "telegramlogs.txt"
 
 
-def _log_message(chat_id: int, text: str, direction: str = "in") -> None:
-    """Append a message to the chat log (JSONL format)."""
+def _log_message(chat_id: int, text: str, direction: str = "in", sender: str = "") -> None:
+    """Append a message to both chat logs (JSONL for API, txt for human reading)."""
     import json
     from datetime import datetime
+
+    now = datetime.now()
+
+    # JSONL log (for /chat-log API)
     try:
-        entry = {"ts": datetime.now().isoformat(), "dir": direction, "chat": chat_id, "text": text[:500]}
-        with open(_CHAT_LOG, "a") as f:
+        entry = {"ts": now.isoformat(), "dir": direction, "chat": chat_id, "text": text[:500]}
+        with open(_CHAT_LOG_JSONL, "a") as f:
             f.write(json.dumps(entry) + "\n")
+    except Exception:
+        pass
+
+    # Human-readable log (telegramlogs.txt)
+    try:
+        ts = now.strftime("%-m/%-d/%Y %-I:%M %p")
+        name = sender or ("Dylan Spencer" if direction == "in" else "vibemarkting")
+        # Collapse multi-line messages to keep log scannable
+        short = text[:300].replace("\n", " | ") if len(text) > 300 else text.replace("\n", " | ")
+        with open(_CHAT_LOG_TXT, "a") as f:
+            f.write(f"[{ts}] {name}: {short}\n")
     except Exception:
         pass
 
@@ -204,7 +220,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             base_url = settings.public_url or f"http://{settings.host}:{settings.port}"
             view_url = f"{base_url}/plans/{reel_id}/view"
             status = entry["status"] if entry else "unknown"
-            await update.message.reply_text(f"Already processed ({status}): {view_url}")
+            msg = f"Already processed ({status}): {view_url}"
+            await update.message.reply_text(msg)
+            _log_message(chat_id, msg, direction="out")
             continue
 
         if _paused:
@@ -222,13 +240,17 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reel_id, url = reels[0]
         active = _active_count
         if active > 0:
-            await update.message.reply_text(f"Got it ({reel_id}) — {active} reel(s) active, adding yours.")
+            ack = f"Got it ({reel_id}) — {active} reel(s) active, adding yours."
         else:
-            await update.message.reply_text(f"Got it ({reel_id}) — processing now...")
+            ack = f"Got it ({reel_id}) — processing now..."
+        await update.message.reply_text(ack)
+        _log_message(chat_id, ack, direction="out")
         asyncio.create_task(_process_reel_locked(update, reel_id, url, user_context, chat_id))
     else:
         ids = ", ".join(r[0] for r in reels)
-        await update.message.reply_text(f"Got {len(reels)} reels ({ids}) — processing all in parallel...")
+        ack = f"Got {len(reels)} reels ({ids}) — processing all in parallel..."
+        await update.message.reply_text(ack)
+        _log_message(chat_id, ack, direction="out")
         for reel_id, url in reels:
             asyncio.create_task(_process_reel_locked(update, reel_id, url, user_context, chat_id))
 
@@ -302,6 +324,7 @@ async def _process_reel_inner(update, reel_id, url, user_context, chat_id):
             pass
 
         await update.message.reply_text(notification, parse_mode="Markdown")
+        _log_message(chat_id, notification, direction="out")
         logger.info(f"Telegram: sent notification for {reel_id} in {elapsed}s")
 
     except Exception as e:
@@ -309,9 +332,9 @@ async def _process_reel_inner(update, reel_id, url, user_context, chat_id):
         logger.error(f"Telegram pipeline failed after {elapsed}s: {e}", exc_info=True)
         # Don't leak internal error details to user
         error_type = type(e).__name__
-        await update.message.reply_text(
-            f"Failed to process reel ({elapsed}s). Error type: {error_type}. Check server logs."
-        )
+        error_msg = f"Failed to process reel ({elapsed}s). Error type: {error_type}. Check server logs."
+        await update.message.reply_text(error_msg)
+        _log_message(chat_id, error_msg, direction="out")
 
 
 async def _run_telegram_pipeline(
