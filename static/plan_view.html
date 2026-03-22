@@ -165,6 +165,14 @@
   .ctrl-btn.back { background: #475569; }
   .ctrl-count { color: #94a3b8; font-size: 0.85rem; }
   .ctrl-status { color: #94a3b8; font-size: 0.85rem; margin-left: auto; }
+  .select-shortcuts { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+  .select-btn {
+    padding: 5px 10px; border: 1px solid #334155; border-radius: 4px;
+    background: transparent; color: #94a3b8; cursor: pointer; font-size: 0.75rem;
+    transition: all 0.15s;
+  }
+  .select-btn:hover { border-color: #64748b; color: #e2e8f0; }
+  .select-btn.active { border-color: #22c55e; color: #22c55e; }
 
   /* Feedback */
   .feedback-bar {
@@ -273,6 +281,12 @@
 <div class="control-panel" id="control-panel">
   <h2>Tasks</h2>
   <div class="resolved-banner" id="resolved-banner"></div>
+  <div class="select-shortcuts" id="select-shortcuts">
+    <button class="select-btn" onclick="selectAll()">Select all</button>
+    <button class="select-btn" onclick="selectNone()">Clear</button>
+    <button class="select-btn" onclick="selectByLevel(1)">L1 only</button>
+    <button class="select-btn" onclick="selectByLevel(2)">L1 + L2</button>
+  </div>
   <div id="task-list"></div>
   <textarea class="notes-area" id="approval-notes" placeholder="Any notes? (optional)"></textarea>
   <div class="control-actions">
@@ -360,6 +374,10 @@ function renderTasks() {
     document.getElementById('btn-approve').disabled = true;
     document.getElementById('btn-skip').disabled = true;
     document.getElementById('approval-notes').disabled = true;
+    document.getElementById('select-shortcuts').style.display = 'none';
+    document.getElementById('feedback-bar').style.display = 'none';
+    document.getElementById('fb-comment').style.display = 'none';
+    document.getElementById('fb-submit').style.display = 'none';
     var banner = document.getElementById('resolved-banner');
     banner.textContent = 'Plan status: ' + PLAN_STATUS;
     banner.classList.add('visible');
@@ -416,6 +434,10 @@ async function approveSelected() {
       document.querySelectorAll('.task-card').forEach(function(c) {
         c.classList.add('resolved');
       });
+      document.getElementById('select-shortcuts').style.display = 'none';
+      document.getElementById('feedback-bar').style.display = 'none';
+      document.getElementById('fb-comment').style.display = 'none';
+      document.getElementById('fb-submit').style.display = 'none';
     } else {
       var err = await res.json();
       status.textContent = 'Error: ' + (err.detail || res.statusText);
@@ -448,6 +470,10 @@ async function skipPlan() {
       var banner = document.getElementById('resolved-banner');
       banner.textContent = 'Plan skipped';
       banner.classList.add('visible');
+      document.getElementById('select-shortcuts').style.display = 'none';
+      document.getElementById('feedback-bar').style.display = 'none';
+      document.getElementById('fb-comment').style.display = 'none';
+      document.getElementById('fb-submit').style.display = 'none';
     } else {
       status.textContent = 'Error: ' + res.statusText;
       btn.innerHTML = origText;
@@ -482,6 +508,37 @@ async function sendFeedback() {
   } catch(e) {
     document.getElementById('ctrl-status').textContent = 'Feedback error: ' + e.message;
   }
+}
+
+function selectAll() {
+  selectedTasks.clear();
+  TASKS.forEach(function(t, i) { selectedTasks.add(i); });
+  syncTaskCards();
+}
+
+function selectNone() {
+  selectedTasks.clear();
+  syncTaskCards();
+}
+
+function selectByLevel(maxLevel) {
+  selectedTasks.clear();
+  TASKS.forEach(function(t, i) {
+    if ((t.level || 1) <= maxLevel) selectedTasks.add(i);
+  });
+  syncTaskCards();
+}
+
+function syncTaskCards() {
+  document.querySelectorAll('.task-card').forEach(function(card) {
+    var idx = parseInt(card.dataset.idx);
+    if (selectedTasks.has(idx)) {
+      card.classList.add('selected');
+    } else {
+      card.classList.remove('selected');
+    }
+  });
+  updateCount();
 }
 
 function esc(s) {

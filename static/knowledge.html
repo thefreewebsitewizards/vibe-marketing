@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ReelBot — Knowledge Base</title>
+<meta name="description" content="ReelBot knowledge base — insights and notes collected from Instagram Reel analyses.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #0f172a; color: #e2e8f0;
+    line-height: 1.6; padding: 16px;
+    max-width: 900px; margin: 0 auto;
+  }
+  a { color: #60a5fa; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  h1 { font-size: 1.5rem; color: #f8fafc; margin-bottom: 4px; }
+  h2 { font-size: 1.15rem; color: #f8fafc; margin-top: 24px; margin-bottom: 12px; }
+
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
+  .back-btn {
+    background: #475569; color: #fff; border: none; border-radius: 6px;
+    padding: 8px 16px; cursor: pointer; font-size: 0.85rem; font-weight: 600;
+    text-decoration: none; display: inline-block;
+  }
+  .back-btn:hover { background: #64748b; text-decoration: none; }
+
+  .search-bar { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+  .search-input {
+    background: #1e293b; border: 1px solid #334155; border-radius: 6px;
+    color: #e2e8f0; padding: 8px 12px; font-size: 0.85rem; flex: 1; min-width: 200px;
+  }
+  .search-input::placeholder { color: #64748b; }
+  .filter-select {
+    background: #1e293b; border: 1px solid #334155; border-radius: 6px;
+    color: #e2e8f0; padding: 8px 10px; font-size: 0.85rem;
+  }
+
+  .stats { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+  .stat {
+    background: #1e293b; border-radius: 6px; padding: 10px 16px;
+    flex: 1; min-width: 100px; text-align: center;
+  }
+  .stat-value { font-size: 1.3rem; font-weight: 700; color: #f8fafc; }
+  .stat-label { font-size: 0.75rem; color: #64748b; text-transform: uppercase; }
+
+  .entry-card {
+    background: #1e293b; border-radius: 6px; padding: 14px 16px;
+    margin-bottom: 8px; transition: background 0.15s;
+  }
+  .entry-card:hover { background: #263347; }
+  .entry-title { font-weight: 600; color: #f1f5f9; font-size: 0.95rem; margin-bottom: 4px; }
+  .entry-content { color: #cbd5e1; font-size: 0.9rem; margin-bottom: 8px; }
+  .entry-meta { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 4px;
+    font-size: 0.7rem; font-weight: 600; color: #fff;
+  }
+  .badge-category { background: #7c3aed; }
+  .badge-tag { background: #334155; color: #94a3b8; }
+  .entry-date { color: #64748b; font-size: 0.75rem; }
+  .entry-link { font-size: 0.75rem; }
+  .empty-state { color: #64748b; text-align: center; padding: 40px; }
+
+  @media (max-width: 600px) {
+    body { padding: 10px; }
+    h1 { font-size: 1.2rem; }
+    .search-bar { flex-direction: column; }
+    .search-input { width: 100%; font-size: 16px; padding: 10px 12px; }
+    .filter-select { width: 100%; font-size: 16px; padding: 10px; }
+    .stats { gap: 8px; }
+    .stat { min-width: 70px; padding: 8px 10px; }
+    .stat-value { font-size: 1.1rem; }
+    .entry-card { padding: 10px 12px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Knowledge Base</h1>
+  <a href="/" class="back-btn">Dashboard</a>
+</div>
+
+<div class="search-bar">
+  <input type="text" class="search-input" id="search" placeholder="Search entries..." oninput="filterEntries()">
+  <select class="filter-select" id="categoryFilter" onchange="filterEntries()">
+    <option value="">All categories</option>
+    {{category_options}}
+  </select>
+</div>
+
+{{stats_html}}
+
+<div id="entries">{{entries_html}}</div>
+
+<div class="empty-state" id="no-match" style="display:none;">No entries match your filters.</div>
+
+<script>
+function filterEntries() {
+  var q = document.getElementById('search').value.toLowerCase();
+  var cat = document.getElementById('categoryFilter').value;
+  var cards = document.querySelectorAll('.entry-card');
+  var visible = 0;
+  cards.forEach(function(card) {
+    var text = card.textContent.toLowerCase();
+    var cardCat = card.dataset.category || '';
+    var matchQ = !q || text.includes(q);
+    var matchC = !cat || cardCat === cat;
+    var show = matchQ && matchC;
+    card.style.display = show ? '' : 'none';
+    if (show) visible++;
+  });
+  var hasFilters = q || cat;
+  document.getElementById('no-match').style.display = (visible === 0 && hasFilters) ? '' : 'none';
+}
+</script>
+
+</body>
+</html>
