@@ -169,6 +169,17 @@ def execute_claude_code(
     if not Path(repo_path).is_dir():
         return False, f"[claude_code] Repo not found at {repo_path}"
 
+    # Safety: don't let the agent loop modify its own codebase
+    repo_name = Path(repo_path).name
+    if repo_name == "reelbot":
+        send_telegram(
+            f"*ReelBot Self-Modification Blocked*\n\n"
+            f"*{task.get('title', 'Untitled')}*\n"
+            f"Task targets reelbot repo -- skipped for manual review.\n"
+            f"Run this task manually in a Claude Code session."
+        )
+        return False, "[claude_code] Self-modification blocked — reelbot tasks require manual execution"
+
     title = task.get("title", "Untitled")
     description = task.get("description", "")
     tool_data = task.get("tool_data", {})
@@ -260,12 +271,16 @@ def execute_claude_code(
             test_output = f"Claude Code error: {stderr}"
             continue
 
+        # Log Claude's output for debugging
+        claude_output = result.stdout[-1000:] if len(result.stdout) > 1000 else result.stdout
+        log(f"    Claude output ({len(result.stdout)} chars): {claude_output[:200].strip()}")
+
         # Check for commits
         diff_check = _run_git(["log", "main..HEAD", "--oneline"], cwd=repo_path)
         if not diff_check.stdout.strip():
             _run_git(["checkout", "main"], cwd=repo_path)
             if attempt == MAX_RETRIES:
-                return False, "[claude_code] No commits made"
+                return False, f"[claude_code] No commits made. Claude said: {claude_output[:300]}"
             continue
 
         commit_count = len(diff_check.stdout.strip().splitlines())
@@ -306,19 +321,20 @@ def execute_claude_code(
             # Tests failed
             log(f"    Tests failed on attempt {attempt}")
             if attempt == MAX_RETRIES:
-                # Final attempt failed -- leave branch for debugging, don't merge
+                # Final attempt failed — clean up branch to avoid polluting repo
                 _run_git(["checkout", "main"], cwd=repo_path)
+                _run_git(["branch", "-D", branch_name], cwd=repo_path)
                 notes = (
                     f"[claude_code] Tests failed after {MAX_RETRIES} attempts\n"
-                    f"Branch: {branch_name}\n"
-                    f"Test output: {test_output[-500:]}"
+                    f"Test output: {test_output[-500:]}\n"
+                    f"Claude output: {claude_output[:300]}"
                 )
                 send_telegram(
                     f"*ReelBot Task Failed Tests*\n\n"
                     f"*{title}*\n"
                     f"Repo: `{Path(repo_path).name}`\n"
                     f"Attempts: {MAX_RETRIES}\n"
-                    f"Branch `{branch_name}` left for debugging"
+                    f"Main branch is clean (failed branch deleted)"
                 )
                 return False, notes
             # Reset for retry -- test_output will be fed into next prompt

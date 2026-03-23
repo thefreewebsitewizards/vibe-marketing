@@ -28,8 +28,10 @@ def _load() -> list[dict]:
 def _save(entries: list[dict]) -> None:
     path = _kb_path()
     path.parent.mkdir(parents=True, exist_ok=True)
-    with open(path, "w") as f:
+    tmp_path = path.with_suffix(".tmp")
+    with open(tmp_path, "w") as f:
         json.dump(entries, f, indent=2)
+    tmp_path.replace(path)
 
 
 def add_entry(

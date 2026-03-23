@@ -23,10 +23,12 @@ def get_index() -> dict:
 
 
 def save_index(index: dict) -> None:
-    """Write the plan index."""
+    """Write the plan index atomically (write to temp, then rename)."""
     index_path = settings.plans_dir / "_index.json"
-    with open(index_path, "w") as f:
+    tmp_path = index_path.with_suffix(".tmp")
+    with open(tmp_path, "w") as f:
         json.dump(index, f, indent=2)
+    tmp_path.replace(index_path)
 
 
 def update_plan_status(reel_id: str, new_status: PlanStatus) -> bool:

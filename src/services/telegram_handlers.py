@@ -372,7 +372,9 @@ async def _run_telegram_pipeline(
         video_path = download_result
         audio_path = await asyncio.to_thread(extract_audio, video_path, temp_dir)
         frame_paths = await asyncio.to_thread(extract_keyframes, video_path, temp_dir)
-        transcript = await asyncio.to_thread(transcribe, audio_path)
+        from src.services.transcriber import whisper_semaphore
+        async with whisper_semaphore:
+            transcript = await asyncio.to_thread(transcribe, audio_path)
         await progress_cb(3, "Analyzing content...")
         analysis, analysis_cr = await asyncio.to_thread(
             analyze_reel, transcript, metadata, frame_paths, user_context,
