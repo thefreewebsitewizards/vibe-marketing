@@ -1,16 +1,30 @@
 import json
 import logging
 import re
+from datetime import datetime
 from pathlib import Path
 from typing import Literal
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import HTMLResponse
+from loguru import logger as audit_logger
 from pydantic import BaseModel, Field
 
 from src.config import settings
 from src.models import PlanStatus
 from src.utils.auth import require_api_key
+
+
+def _audit_log(action: str, reel_id: str, details: dict) -> None:
+    """Append to plans/_audit.jsonl for action history."""
+    entry = {"ts": datetime.now().isoformat(), "action": action, "reel_id": reel_id, **details}
+    audit_path = settings.plans_dir / "_audit.jsonl"
+    try:
+        with open(audit_path, "a") as f:
+            f.write(json.dumps(entry) + "\n")
+    except Exception:
+        pass
+    audit_logger.info(f"AUDIT: {action} {reel_id} {details}")
 from src.services.executor import (
     get_approved_plans,
     load_plan,
@@ -146,6 +160,8 @@ def approve_plan(reel_id: str, body: ApproveRequest):
     # Approve — update_plan_status triggers execution via _trigger_execution
     update_plan_status(reel_id, PlanStatus.APPROVED)
 
+    _audit_log("approve", reel_id, {"selected_tasks": body.selected_tasks, "notes": body.notes})
+
     # Send Telegram notification (non-blocking)
     _notify_plan_approved(reel_id, plan_data, body.selected_tasks)
 
@@ -219,6 +235,7 @@ def skip_plan(reel_id: str):
         raise HTTPException(status_code=404, detail=f"Plan not found: {reel_id}")
 
     update_plan_status(reel_id, PlanStatus.SKIPPED)
+    _audit_log("skip", reel_id, {})
     return {"reel_id": reel_id, "status": "skipped"}
 
 
@@ -231,6 +248,7 @@ def submit_feedback(reel_id: str, body: FeedbackRequest):
     save_feedback(reel_id, body.rating)
     if body.comment:
         update_feedback_comment(reel_id, body.comment)
+    _audit_log("feedback", reel_id, {"rating": body.rating, "comment": body.comment[:100] if body.comment else ""})
 
     return {"reel_id": reel_id, "rating": body.rating}
 

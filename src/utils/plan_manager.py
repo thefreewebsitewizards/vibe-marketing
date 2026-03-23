@@ -12,6 +12,9 @@ from src.models import PlanStatus
 # Lock for read-modify-write on _index.json
 _index_lock = threading.Lock()
 
+# Limit concurrent plan executions (prevents resource exhaustion)
+_executor_semaphore = threading.Semaphore(3)
+
 
 def get_index() -> dict:
     """Read the plan index."""
@@ -90,19 +93,23 @@ def _trigger_execution(reel_id: str, plan_dir_name: str | None) -> None:
             json.dump(queue, f, indent=2)
         logger.info(f"Execution trigger: {reel_id} added to approved queue")
 
-    # Try immediate execution (in background thread)
+    # Try immediate execution (in background thread, max 3 concurrent)
     if plan_dir_name:
         import threading
         from src.services.executor import execute_plan
 
-        thread = threading.Thread(
-            target=execute_plan,
-            args=(reel_id, plan_dir_name),
-            daemon=True,
-            name=f"executor-{reel_id}",
-        )
-        thread.start()
-        logger.info(f"Executor thread started for {reel_id}")
+        if _executor_semaphore.acquire(blocking=False):
+            def _run():
+                try:
+                    execute_plan(reel_id, plan_dir_name)
+                finally:
+                    _executor_semaphore.release()
+
+            thread = threading.Thread(target=_run, daemon=True, name=f"executor-{reel_id}")
+            thread.start()
+            logger.info(f"Executor thread started for {reel_id}")
+        else:
+            logger.warning(f"Executor limit reached (3), {reel_id} will be picked up by agent loop")
 
 
 def get_plans_by_status(status: PlanStatus) -> list[dict]:
