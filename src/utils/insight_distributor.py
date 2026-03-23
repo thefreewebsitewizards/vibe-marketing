@@ -9,20 +9,22 @@ from pathlib import Path
 
 from loguru import logger
 
+from src.utils.changes_log import log_change
+
 PROJECTS_BASE = Path.home() / "projects" / "openclaw" / "claude-code-projects"
 
 # Topic → which project folders get insights + sub-folder name
 TOPIC_ROUTING = {
     "sales": [
-        {"project": "tfww", "folder": "sales", "context": "Free website offer sales — cold outreach, objection handling, closing for free website + hosting upsell"},
+        {"project": "tfww", "folder": "sales", "context": "Free website offer sales — cold outreach, objection handling, closing on video call for free website + hosting upsell"},
         {"project": "gnomeguys", "folder": "sales", "context": "In-person airport sales — selling Masters Tournament merch to private jet travelers while working as baggage assist"},
     ],
     "web_design": [
         {"project": "tfww", "folder": "web-design", "context": "Autonomous web design — CSS, layouts, UX, conversion optimization for client websites"},
     ],
     "marketing": [
-        {"project": "tfww", "folder": "marketing", "context": "Lead generation and client acquisition for free website agency"},
-        {"project": "gnomeguys", "folder": "marketing", "context": "Masters Tournament merch marketing — pre-orders, eBay listings, social media"},
+        {"project": "tfww", "folder": "marketing", "context": "Lead generation and client acquisition — ads, funnels, landing pages for free website agency"},
+        {"project": "gnomeguys", "folder": "marketing", "context": "Masters Tournament merch marketing — pre-orders, eBay listings, social media, Shopify"},
     ],
     "ai_automation": [
         {"project": "claude-upgrades", "folder": "reel-insights", "context": "AI tools and LLM workflow improvements"},
@@ -32,13 +34,20 @@ TOPIC_ROUTING = {
         {"project": "ddb", "folder": "reel-insights", "context": "Dylan Does Business personal brand — content strategy, video production, social media growth"},
     ],
     "crm": [
-        {"project": "ghl-fix", "folder": "reel-insights", "context": "CRM — pipeline management, automations, client tracking"},
+        {"project": "tfww", "folder": "crm", "context": "CRM dashboard at dashboard.thefreewebsitewizards.com — pipeline, contacts, inbox, email sequences, reporting"},
     ],
-    "automation": [
-        {"project": "n8n-automations", "folder": "reel-insights", "context": "Backend automations — API integrations, webhook flows, workflow automation"},
+    "ecommerce": [
+        {"project": "gnomeguys", "folder": "reel-insights", "context": "E-commerce store (Shopify + Next.js) — product pages, cart optimization, email flows, Shopify tips, conversion optimization"},
     ],
     "appointment_setting": [
         {"project": "aias", "folder": "reel-insights", "context": "AI appointment setting via iMessage/SMS — lead qualification, booking, follow-up"},
+    ],
+    "funnel": [
+        {"project": "tfww", "folder": "marketing", "context": "Low ticket funnel — ads → landing page → AIAS books → close on video call"},
+        {"project": "aias", "folder": "reel-insights", "context": "High ticket funnel — ads → landing page → AIAS books → close on video call"},
+    ],
+    "sales_training": [
+        {"project": "closersim", "folder": "reel-insights", "context": "AI sales call simulator — objection handling drills, closing techniques, NLP personality profiles"},
     ],
     "claude_code": [
         {"project": "claude-upgrades", "folder": "reel-insights", "context": "Claude Code improvements — new skills, prompt engineering, token optimization, MCP management"},
@@ -50,12 +59,13 @@ TOPIC_ROUTING = {
 
 # Category → which topics it maps to
 CATEGORY_TO_TOPICS = {
-    "sales": ["sales"],
-    "marketing": ["marketing", "sales"],
-    "ai_automation": ["ai_automation", "automation", "claude_code", "openclaw_system"],
+    "sales": ["sales", "funnel", "sales_training"],
+    "marketing": ["marketing", "sales", "funnel", "ecommerce"],
+    "ai_automation": ["ai_automation", "claude_code", "openclaw_system"],
     "social_media": ["content_creation", "marketing"],
-    "business_ops": ["sales", "crm"],
+    "business_ops": ["sales", "crm", "ecommerce"],
     "mindset": [],  # mindset rarely routes anywhere specific
+    "ecommerce": ["ecommerce", "marketing"],
 }
 
 INSIGHTS_FILENAME = "reel-insights.md"
@@ -198,6 +208,14 @@ def distribute_insights(
                     "topic": topic,
                     "insight_count": len(insights_to_save),
                 })
+                log_change(
+                    reel_id=reel_id,
+                    change_type="insight_distribution",
+                    target=f"{project}/{folder}",
+                    summary=f"Distributed {len(insights_to_save)} {topic} insight(s) to {project}/{folder}",
+                    detail="; ".join(insights_to_save[:3]),
+                    source_url=source_url,
+                )
                 logger.info(f"Distributed {len(insights_to_save)} insights to {project}/{folder}")
             except Exception as e:
                 logger.error(f"Failed to distribute to {project}/{folder}: {e}")

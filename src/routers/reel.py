@@ -210,10 +210,10 @@ def _run_pipeline(reel_id: str, reel_url: str, user_context: str = "") -> None:
 
         costs = CostBreakdown()
 
-        if metadata.content_type == "carousel":
-            image_paths = download_result
+        if metadata.content_type in ("carousel", "post"):
+            image_paths = download_result if isinstance(download_result, list) else [download_result]
             ocr_text = extract_text_from_images(image_paths)
-            transcript = TranscriptResult(text=ocr_text, language="en")
+            transcript = TranscriptResult(text=ocr_text or metadata.caption or "", language="en")
             analysis, analysis_cr = analyze_carousel(ocr_text, metadata, image_paths, user_context=user_context)
         else:
             video_path = download_result

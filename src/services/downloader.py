@@ -26,6 +26,11 @@ def extract_shortcode(url: str) -> str:
     raise ValueError(f"Could not extract shortcode from URL: {url[:120]}")
 
 
+def is_post_url(url: str) -> bool:
+    """Check if URL is a /p/ post (vs /reel/)."""
+    return bool(re.search(r"instagram\.com/p/", url))
+
+
 def download_reel(url: str, output_dir: Path) -> tuple[Path | list[Path], ReelMetadata]:
     """Download reel/carousel with yt-dlp, falling back to Apify if it fails.
 
@@ -43,9 +48,11 @@ def download_reel(url: str, output_dir: Path) -> tuple[Path | list[Path], ReelMe
 
     # Fallback to Apify
     if settings.apify_api_key:
-        logger.info("Falling back to Apify instagram-reel-scraper...")
+        is_post = is_post_url(url)
+        actor = "apify~instagram-post-scraper" if is_post else "apify~instagram-reel-scraper"
+        logger.info(f"Falling back to Apify {actor}...")
         try:
-            return _download_apify(url, shortcode, output_dir)
+            return _download_apify(url, shortcode, output_dir, actor=actor)
         except Exception as e2:
             logger.error(f"Apify fallback also failed: {e2}")
             raise RuntimeError(f"All download methods failed. yt-dlp: {ytdlp_err} | Apify: {e2}")
@@ -58,20 +65,26 @@ def _download_ytdlp(url: str, shortcode: str, output_dir: Path) -> tuple[Path | 
     output_path = output_dir / f"{shortcode}.mp4"
     info_path = output_dir / f"{shortcode}.info.json"
 
-    logger.info(f"Downloading reel {shortcode} via yt-dlp")
+    logger.info(f"Downloading {shortcode} via yt-dlp")
 
     cmd = [
         "yt-dlp",
         "--no-warnings",
         "--write-info-json",
         "--write-comments",
+        "--write-thumbnail",
         "-o", str(output_path),
         url,
     ]
 
     result = subprocess.run(cmd, capture_output=True, text=True, timeout=DOWNLOAD_TIMEOUT)
+
+    # For /p/ posts, yt-dlp may fail because there's no video.
+    # Check if we at least got metadata or a thumbnail before giving up.
     if result.returncode != 0:
-        raise RuntimeError(result.stderr[:500])
+        # Check if we got an info.json (metadata) even though video download failed
+        if not info_path.exists():
+            raise RuntimeError(result.stderr[:500])
 
     # Parse metadata first (need it for content_type detection)
     creator = ""
@@ -96,18 +109,34 @@ def _download_ytdlp(url: str, shortcode: str, output_dir: Path) -> tuple[Path | 
             if text.strip():
                 comments.append({"author": author, "text": text[:500]})
 
-    # Check for carousel (multiple images downloaded)
+    # Check for images (carousel or single image post)
     image_files = sorted(output_dir.glob(f"{shortcode}*.jpg")) + sorted(output_dir.glob(f"{shortcode}*.png"))
+    # Exclude thumbnail files (yt-dlp names them .jpg alongside .info.json)
+    image_files = [f for f in image_files if ".info" not in f.name]
+
     if image_files and not output_path.exists():
-        # This is a carousel post
+        content_type = "carousel" if len(image_files) > 1 else "post"
         metadata = ReelMetadata(
             url=url, shortcode=shortcode, creator=creator,
-            caption=caption, duration=0.0, content_type="carousel",
+            caption=caption, duration=0.0, content_type=content_type,
             upload_date=upload_date, like_count=like_count,
             comment_count=comment_count, comments=comments,
         )
-        logger.info(f"Downloaded carousel via yt-dlp: {len(image_files)} images by {creator}")
+        logger.info(f"Downloaded {content_type} via yt-dlp: {len(image_files)} image(s) by {creator}")
         return image_files, metadata
+
+    # Also check for webp thumbnails (common for image posts where yt-dlp only gets the thumb)
+    if not output_path.exists():
+        webp_files = sorted(output_dir.glob(f"{shortcode}*.webp"))
+        if webp_files:
+            metadata = ReelMetadata(
+                url=url, shortcode=shortcode, creator=creator,
+                caption=caption, duration=0.0, content_type="post",
+                upload_date=upload_date, like_count=like_count,
+                comment_count=comment_count, comments=comments,
+            )
+            logger.info(f"Downloaded post thumbnail via yt-dlp: {len(webp_files)} image(s) by {creator}")
+            return webp_files, metadata
 
     # Standard video path
     if not output_path.exists():
@@ -127,12 +156,17 @@ def _download_ytdlp(url: str, shortcode: str, output_dir: Path) -> tuple[Path | 
     return output_path, metadata
 
 
-def _download_apify(url: str, shortcode: str, output_dir: Path) -> tuple[Path, ReelMetadata]:
-    """Download using Apify instagram-reel-scraper as fallback."""
+def _download_apify(
+    url: str,
+    shortcode: str,
+    output_dir: Path,
+    actor: str = "apify~instagram-reel-scraper",
+) -> tuple[Path | list[Path], ReelMetadata]:
+    """Download using Apify as fallback. Supports both reel and post scrapers."""
     output_path = output_dir / f"{shortcode}.mp4"
 
     # Start the Apify actor run
-    run_url = "https://api.apify.com/v2/acts/apify~instagram-reel-scraper/runs"
+    run_url = f"https://api.apify.com/v2/acts/{actor}/runs"
     headers = {"Authorization": f"Bearer {settings.apify_api_key}"}
     payload = {
         "directUrls": [url],
@@ -147,7 +181,7 @@ def _download_apify(url: str, shortcode: str, output_dir: Path) -> tuple[Path, R
         run_id = run_data["id"]
         dataset_id = run_data["defaultDatasetId"]
 
-        logger.info(f"Apify run started: {run_id}")
+        logger.info(f"Apify run started: {run_id} (actor: {actor})")
 
         # Poll until finished (max ~90s)
         status_url = f"https://api.apify.com/v2/actor-runs/{run_id}"
@@ -170,22 +204,51 @@ def _download_apify(url: str, shortcode: str, output_dir: Path) -> tuple[Path, R
             raise RuntimeError("Apify returned no results")
 
         item = items[0]
+        creator = item.get("ownerUsername", "") or item.get("author", "")
+        caption = item.get("caption", "") or item.get("text", "")
+
+        # Try video first
         video_url = item.get("videoUrl") or item.get("video_url") or item.get("videoPlaybackUrl")
-        if not video_url:
-            raise RuntimeError(f"No video URL in Apify response: {list(item.keys())}")
+        if video_url:
+            video_resp = client.get(video_url)
+            video_resp.raise_for_status()
+            output_path.write_bytes(video_resp.content)
+            duration = float(item.get("videoDuration", 0) or item.get("duration", 0) or 0)
+            metadata = ReelMetadata(
+                url=url, shortcode=shortcode, creator=creator,
+                caption=caption, duration=duration,
+            )
+            logger.info(f"Downloaded video via Apify: {output_path} ({duration:.1f}s, by {creator})")
+            return output_path, metadata
 
-        # Download the video file
-        video_resp = client.get(video_url)
-        video_resp.raise_for_status()
-        output_path.write_bytes(video_resp.content)
+        # No video — try images (post or carousel)
+        image_urls = item.get("images") or item.get("displayUrl") or item.get("imageUrls") or []
+        if isinstance(image_urls, str):
+            image_urls = [image_urls]
 
-    creator = item.get("ownerUsername", "") or item.get("author", "")
-    caption = item.get("caption", "") or item.get("text", "")
-    duration = float(item.get("videoDuration", 0) or item.get("duration", 0) or 0)
+        if not image_urls:
+            # Last resort: try the display_url field
+            display = item.get("display_url") or item.get("displayUrl") or ""
+            if display:
+                image_urls = [display]
 
-    metadata = ReelMetadata(
-        url=url, shortcode=shortcode, creator=creator,
-        caption=caption, duration=duration,
-    )
-    logger.info(f"Downloaded via Apify: {output_path} ({duration:.1f}s, by {creator})")
-    return output_path, metadata
+        if not image_urls:
+            raise RuntimeError(f"No video or image URLs in Apify response: {list(item.keys())}")
+
+        # Download images
+        downloaded = []
+        for i, img_url in enumerate(image_urls):
+            ext = ".jpg"
+            img_path = output_dir / f"{shortcode}_{i}{ext}"
+            img_resp = client.get(img_url)
+            img_resp.raise_for_status()
+            img_path.write_bytes(img_resp.content)
+            downloaded.append(img_path)
+
+        content_type = "carousel" if len(downloaded) > 1 else "post"
+        metadata = ReelMetadata(
+            url=url, shortcode=shortcode, creator=creator,
+            caption=caption, duration=0.0, content_type=content_type,
+        )
+        logger.info(f"Downloaded {content_type} via Apify: {len(downloaded)} image(s) by {creator}")
+        return downloaded, metadata

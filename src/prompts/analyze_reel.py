@@ -99,7 +99,7 @@ Return JSON:
       "better_alternative": "If questionable or misleading, what to do instead"
     }}
   ],
-  "routing_target": "claude-upgrades|ddb|tfww|n8n-automations|ghl-fix|aias",
+  "routing_target": "claude-upgrades|ddb|tfww|aias|gnomeguys|closersim",
   "relevance_score": 0.0-1.0,
   "web_design_insights": [
     "Specific web design tip, technique, or principle from this reel (if any)",
@@ -125,11 +125,12 @@ Rules for relevance_score — CALIBRATION GUIDE (the user pre-filters reels, so 
 Rules for routing_target — pick the SINGLE best folder for this reel's content:
 - "claude-upgrades" = AI tool improvements, Claude/LLM workflow upgrades, prompt engineering
 - "ddb" = Dylan Does Business — social media content, personal brand, content creation
-- "tfww" = The Free Website Wizards — sales, marketing, business ops, client acquisition, email/SMS
-- "n8n-automations" = Backend automations, API integrations, workflow automation
-- "ghl-fix" = CRM configuration, pipeline/funnel setup
-- "aias" = AI appointment setting — AI chatbots, conversational AI, booking flows
+- "tfww" = The Free Website Wizards — sales, marketing, CRM, funnels, client acquisition, email/SMS
+- "aias" = AI appointment setting — AI chatbots, conversational AI, booking flows, high ticket funnel
+- "gnomeguys" = E-commerce — Shopify, product pages, cart optimization, email flows, conversion
+- "closersim" = Sales training — closing techniques, objection handling drills, sales psychology
 - If the reel spans multiple areas, pick the PRIMARY one that best matches the core topic
+- If nothing fits well, pick the closest match — the insight distributor handles cross-routing
 
 Rules for web_design_insights:
 - Extract ANY web design knowledge: CSS techniques, layout strategies, typography tips, color theory, UX patterns, conversion optimization, responsive design, animation techniques, accessibility, performance, design tools
@@ -261,7 +262,7 @@ Return JSON with the same schema as a reel analysis. Adapt the fields:
   "business_impact": "One sentence on bottom line impact",
   "swipe_phrases": ["Exact text from slides we can reuse"],
   "reality_checks": [],
-  "routing_target": "claude-upgrades|ddb|tfww|n8n-automations|ghl-fix|aias",
+  "routing_target": "claude-upgrades|ddb|tfww|aias|gnomeguys|closersim",
   "relevance_score": 0.0-1.0,
   "web_design_insights": [
     "Specific web design tip or technique from this carousel (if any)"
@@ -277,10 +278,10 @@ Return JSON with the same schema as a reel analysis. Adapt the fields:
 Rules for routing_target — pick the SINGLE best folder for this carousel's content:
 - "claude-upgrades" = AI tool improvements, Claude/LLM workflow upgrades, prompt engineering
 - "ddb" = Dylan Does Business — social media content, personal brand, content creation
-- "tfww" = The Free Website Wizards — sales, marketing, business ops, client acquisition, email/SMS
-- "n8n-automations" = Backend automations, API integrations, workflow automation
-- "ghl-fix" = CRM configuration, pipeline/funnel setup
-- "aias" = AI appointment setting — AI chatbots, conversational AI, booking flows
+- "tfww" = The Free Website Wizards — sales, marketing, CRM, funnels, client acquisition, email/SMS
+- "aias" = AI appointment setting — AI chatbots, conversational AI, booking flows, high ticket funnel
+- "gnomeguys" = E-commerce — Shopify, product pages, cart optimization, email flows, conversion
+- "closersim" = Sales training — closing techniques, objection handling drills, sales psychology
 - If the carousel spans multiple areas, pick the PRIMARY one that best matches the core topic
 
 Apply the same rules as reel analysis for insights, applications, swipe phrases, and relevance_score calibration (most should be 0.85-0.95)."""

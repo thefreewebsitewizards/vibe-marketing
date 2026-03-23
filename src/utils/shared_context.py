@@ -30,9 +30,9 @@ ROUTING_TO_CONTEXT = {
     "claude-upgrades": [],
     "ddb": ["ddb.md"],
     "tfww": ["tfww.md"],
-    "n8n-automations": [],
-    "ghl-fix": [],
     "aias": ["aias.md"],
+    "gnomeguys": ["gnomeguys.md"],
+    "closersim": ["closersim.md"],
 }
 
 

@@ -2,11 +2,12 @@ import json
 from collections import defaultdict
 from pathlib import Path
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Query
 from fastapi.responses import HTMLResponse
 
 from src.config import settings
 from src.utils.plan_manager import get_index
+from src.utils.changes_log import get_changes, get_changes_summary
 
 router = APIRouter()
 
@@ -331,3 +332,14 @@ def costs_page():
     html = html.replace("{{step_bars_html}}", step_bars_html)
     html = html.replace("{{plan_rows_html}}", plan_rows_html)
     return HTMLResponse(html)
+
+
+@router.get("/changes")
+def changes_api(
+    limit: int = Query(default=100, le=500),
+    type: str = Query(default=""),
+):
+    """Get the changes log — every modification made by plan execution."""
+    entries = get_changes(limit=limit, change_type=type)
+    summary = get_changes_summary()
+    return {"changes": entries, "summary": summary, "total": sum(summary.values())}

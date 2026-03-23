@@ -358,11 +358,12 @@ async def _run_telegram_pipeline(
 
     download_result, metadata = await asyncio.to_thread(download_reel, url, temp_dir)
 
-    if metadata.content_type == "carousel":
-        await progress_cb(2, "Reading carousel images...")
-        image_paths = download_result
+    if metadata.content_type in ("carousel", "post"):
+        label = "carousel images" if metadata.content_type == "carousel" else "post image"
+        await progress_cb(2, f"Reading {label}...")
+        image_paths = download_result if isinstance(download_result, list) else [download_result]
         ocr_text = await asyncio.to_thread(extract_text_from_images, image_paths)
-        transcript = TranscriptResult(text=ocr_text, language="en")
+        transcript = TranscriptResult(text=ocr_text or metadata.caption or "", language="en")
         await progress_cb(3, "Analyzing content...")
         analysis, analysis_cr = await asyncio.to_thread(
             analyze_carousel, ocr_text, metadata, image_paths, user_context,

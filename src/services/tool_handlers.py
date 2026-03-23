@@ -9,6 +9,31 @@ from pathlib import Path
 
 from loguru import logger
 
+from src.utils.changes_log import log_change
+
+
+def _plan_context(plan_dir: str) -> dict:
+    """Extract reel_id, source_url, plan_title from a plan directory."""
+    ctx = {"reel_id": "", "source_url": "", "plan_title": ""}
+    p = Path(plan_dir)
+    if "_" in p.name:
+        ctx["reel_id"] = p.name.split("_", 1)[-1]
+    meta_path = p / "metadata.json"
+    if meta_path.exists():
+        try:
+            meta = json.loads(meta_path.read_text())
+            ctx["source_url"] = meta.get("source_url", "")
+            ctx["plan_title"] = meta.get("title", "")
+        except Exception:
+            pass
+    plan_json = p / "plan.json"
+    if not ctx["plan_title"] and plan_json.exists():
+        try:
+            ctx["plan_title"] = json.loads(plan_json.read_text()).get("title", "")
+        except Exception:
+            pass
+    return ctx
+
 
 def handle_sales_script(task: dict, tool_data: dict, plan_dir: str) -> str:
     """Execute a sales_script update using tool_data or regex fallback."""
@@ -36,11 +61,16 @@ def handle_sales_script(task: dict, tool_data: dict, plan_dir: str) -> str:
     # Extract source reel_id from plan_dir for changelog
     source = Path(plan_dir).name if plan_dir else ""
 
+    ctx = _plan_context(plan_dir)
+
     if note and not new_content:
         current = existing.get("content", "") if isinstance(existing, dict) else str(existing)
         appended = f"{current}\n\nNote: {note}"
         update_section(section_id, appended, source=source)
         logger.info(f"Added note to sales script section '{section_id}'")
+        log_change(change_type="sales_script", target=section_id,
+                   summary=f"Added note to section '{section_id}'",
+                   detail=note, **ctx)
         return f"[sales_script] Added note to section '{section_id}': {note[:80]}"
 
     if not new_content:
@@ -48,6 +78,9 @@ def handle_sales_script(task: dict, tool_data: dict, plan_dir: str) -> str:
 
     update_section(section_id, new_content, source=source)
     logger.info(f"Updated sales script section '{section_id}'")
+    log_change(change_type="sales_script", target=section_id,
+               summary=f"Replaced content of section '{section_id}'",
+               detail=new_content[:500], **ctx)
     return f"[sales_script] Updated section '{section_id}'"
 
 
@@ -77,6 +110,10 @@ def handle_content(task: dict, tool_data: dict, plan_dir: str) -> str:
 
     filepath.write_text("\n".join(lines))
     logger.info(f"Saved {len(drafts)} draft(s) to {filepath}")
+    ctx = _plan_context(plan_dir)
+    log_change(change_type="content_draft", target=f"{content_type}/{filename}",
+               summary=f"Saved {len(drafts)} {content_type} draft(s)",
+               detail=drafts[0][:300] if drafts else "", **ctx)
     return f"[content] Saved {len(drafts)} draft(s) to drafts/{filename}"
 
 
@@ -113,6 +150,10 @@ def handle_knowledge_base(task: dict, tool_data: dict, plan_dir: str) -> str:
         source_url=source_url,
     )
 
+    ctx = _plan_context(plan_dir)
+    log_change(change_type="knowledge_base", target=f"{category}/{entry['id']}",
+               summary=f"Added KB entry: {title}",
+               detail=content[:300], **ctx)
     return f"[knowledge_base] Saved: {title} (id: {entry['id']})"
 
 
