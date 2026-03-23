@@ -28,7 +28,7 @@ HEADERS = {}
 if API_KEY:
     HEADERS["X-API-Key"] = API_KEY
 
-# Map routing targets to local repo paths on the VPS
+# Map routing targets and categories to local repo paths on the VPS
 REPO_PATHS = {
     "tfww": "/home/openclaw/projects/tfww-website",
     "aias": "/home/openclaw/projects/aias",
@@ -37,6 +37,11 @@ REPO_PATHS = {
     "claude-upgrades": "/home/openclaw/projects/reelbot",
     "ghl-fix": "/home/openclaw/projects/aias",
     "n8n-automations": "/home/openclaw/projects/aias",
+    # Category fallbacks (analysis categories that aren't routing targets)
+    "ai_automation": "/home/openclaw/projects/aias",
+    "sales": "/home/openclaw/projects/tfww-website",
+    "marketing": "/home/openclaw/projects/tfww-website",
+    "social_media": "/home/openclaw/projects/ddb",
 }
 
 
@@ -357,10 +362,21 @@ def handle_task(reel_id: str, task: dict, plan: dict) -> bool:
                 notes_parts.append(f"[agent] KB task with no content -- skipped")
 
         elif tool == "claude_code":
-            routing_target = plan.get("routed_to", "") or plan.get("category", "")
-            # Allow tool_data to override routing target
-            if tool_data.get("routing_target"):
-                routing_target = tool_data["routing_target"]
+            # Determine target repo: tool_data override > infer from description > plan route
+            routing_target = tool_data.get("routing_target", "")
+            if not routing_target:
+                # Infer from task description/title — look for project names
+                task_text = (title + " " + task.get("description", "")).lower()
+                if "aias" in task_text:
+                    routing_target = "aias"
+                elif "tfww" in task_text or "website" in task_text:
+                    routing_target = "tfww"
+                elif "ddb" in task_text or "dylan does" in task_text:
+                    routing_target = "ddb"
+                elif "reelbot" in task_text:
+                    routing_target = "reelbot"
+                else:
+                    routing_target = plan.get("routed_to", "") or plan.get("category", "")
 
             if not routing_target:
                 notes_parts.append("[agent] claude_code task has no routing target -- skipped")
