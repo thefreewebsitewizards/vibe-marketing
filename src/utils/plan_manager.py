@@ -136,8 +136,14 @@ def find_plan_by_id(reel_id: str) -> dict | None:
 
 
 def is_duplicate(reel_id: str) -> bool:
-    """Check if this reel has already been processed."""
-    return find_plan_by_id(reel_id) is not None
+    """Check if this reel has already been processed.
+
+    Failed and skipped plans are NOT considered duplicates — they can be retried.
+    """
+    entry = find_plan_by_id(reel_id)
+    if entry is None:
+        return False
+    return entry.get("status") not in (PlanStatus.FAILED.value, PlanStatus.SKIPPED.value, "failed", "skipped")
 
 
 def load_plan_content(reel_id: str) -> str:
