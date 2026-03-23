@@ -186,6 +186,7 @@ def execute_claude_code(
         "Do NOT push or create PRs -- that will be handled externally."
     )
 
+    test_output = ""  # Initialize for retry prompt context
     for attempt in range(1, MAX_RETRIES + 1):
         log(f"    Attempt {attempt}/{MAX_RETRIES}")
 
