@@ -183,13 +183,26 @@ def execute_claude_code(
 
     files_str = ", ".join(files_to_modify) if files_to_modify else "Determine from task description"
     base_prompt = (
-        "You are executing a task from a ReelBot plan.\n\n"
-        f"Task: {title}\n"
-        f"Description: {description}\n"
-        f"Files to modify: {files_str}\n"
-        f"Change description: {change_description}\n\n"
-        "Make the changes, then commit with a descriptive message.\n"
-        "Do NOT push or create PRs -- that will be handled externally."
+        "You are autonomously executing a task from an approved ReelBot plan. "
+        "Work as if a senior developer told you to implement this — be thorough.\n\n"
+        f"## Task\n"
+        f"**Title:** {title}\n"
+        f"**Description:** {description}\n"
+        f"**Files to modify:** {files_str}\n"
+        f"**Change description:** {change_description}\n\n"
+        "## How to execute\n"
+        "1. Read the project's CLAUDE.md first to understand conventions\n"
+        "2. Read the files you'll modify BEFORE making changes\n"
+        "3. Understand the existing code structure — don't break what works\n"
+        "4. Make minimal, focused changes that accomplish the task\n"
+        "5. Run tests if a test suite exists\n"
+        "6. Fix any test failures before committing\n"
+        "7. Commit with a descriptive message (conventional commits style)\n\n"
+        "## Rules\n"
+        "- Do NOT push or create PRs — that's handled externally\n"
+        "- Do NOT over-engineer — make the smallest change that accomplishes the task\n"
+        "- If the task is unclear or seems wrong, make your best judgment and note it in the commit message\n"
+        "- If you can't accomplish the task, commit nothing and exit cleanly\n"
     )
 
     test_output = ""  # Initialize for retry prompt context
@@ -221,7 +234,7 @@ def execute_claude_code(
             cmd = [
                 CLAUDE_CMD, "-p", prompt,
                 "--allowedTools", "Edit,Write,Read,Bash,Glob,Grep",
-                "--max-turns", "15",
+                "--max-turns", "30",
             ]
             if CLAUDE_MODEL:
                 cmd.extend(["--model", CLAUDE_MODEL])
