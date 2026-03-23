@@ -104,7 +104,8 @@ Return JSON:
 Level rules:
 - Level 1: EXACTLY 1 task. A note, bookmark, or doc entry. Max 0.25h.
 - Level 2: EXACTLY 1 task. A practical build/tweak. 0.5-2h.
-- Level 3: 1-2 tasks. Apply technique to another system, or create client-facing value. Max 3h total.
+- Level 3: 1-2 tasks. Apply THE SAME TECHNIQUE to another system, or create client-facing value. Max 3h total.
+- L3 MUST be directly related to the reel's core insight — don't bolt on unrelated features the reel briefly mentioned.
 - Levels are cumulative — approving L2 also executes L1, approving L3 executes all.
 - Total tasks: 3-4. TOTAL PLAN under 5h combined. Lean is better.
 - DO NOT fill L3 with content creation just because you need a task — only include L3 if there's genuine value.
@@ -114,7 +115,8 @@ Rules for tool_data — CRITICAL for automated execution:
 - For "sales_script" tasks — two modes:
   - FULL REWRITE: {{"section_id": "<valid_id>", "new_content": "The COMPLETE replacement text"}}
   - ADD A NOTE: {{"section_id": "<valid_id>", "note": "Brief guidance"}}
-  - section_id MUST match a valid ID from the script sections listed below
+  - section_id MUST be one of the EXACT IDs listed below — DO NOT invent new section IDs
+  - If no existing section fits, use "knowledge_base" tool instead to save the insight as a note
 - For "content" tasks: {{"content_type": "ad_copy|email|social_post", "drafts": ["Complete draft..."]}}
 - For "claude_code" tasks: {{"files_to_modify": ["path/to/file.py"], "change_description": "..."}}
 - For "website" tasks: {{"page": "homepage|about|pricing", "changes": ["..."]}}
