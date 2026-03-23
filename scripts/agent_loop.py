@@ -215,10 +215,10 @@ def execute_claude_code(
             result = subprocess.run(
                 [
                     CLAUDE_CMD, "-p", prompt,
-                    "--cwd", repo_path,
                     "--allowedTools", "Edit,Write,Read,Bash,Glob,Grep",
                     "--max-turns", "15",
                 ],
+                cwd=repo_path,
                 capture_output=True,
                 text=True,
                 timeout=CLAUDE_TIMEOUT,
@@ -230,11 +230,12 @@ def execute_claude_code(
             continue
 
         if result.returncode != 0:
-            log(f"    Claude Code failed (exit {result.returncode})")
             stderr = result.stderr[-500:] if len(result.stderr) > 500 else result.stderr
+            log(f"    Claude Code failed (exit {result.returncode}): {stderr.strip()}")
             _run_git(["checkout", "main"], cwd=repo_path)
             if attempt == MAX_RETRIES:
                 return False, f"[claude_code] Failed (exit {result.returncode}): {stderr}"
+            test_output = f"Claude Code error: {stderr}"
             continue
 
         # Check for commits
