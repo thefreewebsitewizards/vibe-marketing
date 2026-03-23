@@ -22,6 +22,7 @@ API_KEY = os.getenv("REELBOT_API_KEY", "")
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "")
 CLAUDE_CMD = os.getenv("CLAUDE_CMD", "claude")
+CLAUDE_MODEL = os.getenv("CLAUDE_MODEL", "")
 CLAUDE_TIMEOUT = int(os.getenv("CLAUDE_TIMEOUT", "300"))
 
 HEADERS = {}
@@ -217,12 +218,15 @@ def execute_claude_code(
         # Run Claude Code
         log(f"    Running Claude Code in {repo_path} (timeout: {CLAUDE_TIMEOUT}s)")
         try:
+            cmd = [
+                CLAUDE_CMD, "-p", prompt,
+                "--allowedTools", "Edit,Write,Read,Bash,Glob,Grep",
+                "--max-turns", "15",
+            ]
+            if CLAUDE_MODEL:
+                cmd.extend(["--model", CLAUDE_MODEL])
             result = subprocess.run(
-                [
-                    CLAUDE_CMD, "-p", prompt,
-                    "--allowedTools", "Edit,Write,Read,Bash,Glob,Grep",
-                    "--max-turns", "15",
-                ],
+                cmd,
                 cwd=repo_path,
                 capture_output=True,
                 text=True,
