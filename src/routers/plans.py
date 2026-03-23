@@ -162,18 +162,6 @@ def approve_plan(reel_id: str, body: ApproveRequest):
 
     _audit_log("approve", reel_id, {"selected_tasks": body.selected_tasks, "notes": body.notes})
 
-    # Save approval as positive feedback for learning
-    from src.utils.feedback import save_feedback
-    selected = len(body.selected_tasks)
-    total = task_count
-    comment = f"Approved {selected}/{total} tasks"
-    if body.notes:
-        comment += f". Notes: {body.notes}"
-    if selected < total:
-        save_feedback(reel_id, "partial", comment)
-    else:
-        save_feedback(reel_id, "good", comment)
-
     # Send Telegram notification (non-blocking)
     _notify_plan_approved(reel_id, plan_data, body.selected_tasks)
 
