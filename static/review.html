@@ -32,7 +32,8 @@
     margin-bottom: 12px; border: 1px solid #334155;
     transition: opacity 0.3s;
   }
-  .plan-card.resolved { opacity: 0.4; }
+  .plan-card.resolved { animation: fadeOut 0.4s ease forwards; }
+  @keyframes fadeOut { to { opacity: 0; height: 0; padding: 0; margin: 0; border: 0; overflow: hidden; } }
   .plan-title { font-weight: 700; color: #f8fafc; font-size: 1rem; margin-bottom: 4px; }
   .plan-summary {
     color: #cbd5e1; font-size: 0.85rem; margin-bottom: 8px;
@@ -46,6 +47,12 @@
   .plan-meta { color: #64748b; font-size: 0.75rem; margin-bottom: 8px; }
   .plan-meta a { color: #64748b; }
   .plan-meta a:hover { color: #94a3b8; }
+  .video-embed {
+    display: none; margin: 8px 0; border-radius: 8px; overflow: hidden;
+    max-width: 400px;
+  }
+  .video-embed.open { display: block; }
+  .video-embed iframe { width: 100%; height: 480px; border: none; border-radius: 8px; }
 
   .task-row { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 4px; }
   .task-check {
@@ -215,11 +222,19 @@ function render() {
     if (p.creator) metaParts.push(esc(p.creator));
     if (p.category) metaParts.push(esc(p.category));
     metaParts.push((p.relevance_score * 100).toFixed(0) + '%');
-    if (p.source_url) metaParts.push('<a href="' + esc(p.source_url) + '" target="_blank">watch video</a>');
+    if (p.source_url) metaParts.push('<a href="#" onclick="toggleVideo(' + pi + ');return false;">watch video</a>');
+
+    if (!p._videoOpen) p._videoOpen = false;
+    var embedUrl = p.source_url ? p.source_url.replace(/\/$/, '') + '/embed/' : '';
+    var videoHtml = embedUrl ?
+      '<div class="video-embed' + (p._videoOpen ? ' open' : '') + '" id="video-' + pi + '">' +
+        (p._videoOpen ? '<iframe src="' + esc(embedUrl) + '" allowfullscreen></iframe>' : '') +
+      '</div>' : '';
 
     return '<div class="' + cls + '" id="plan-' + pi + '">' +
       '<div class="plan-title">' + esc(p.title) + '</div>' +
       '<div class="plan-meta">' + metaParts.join(' &middot; ') + '</div>' +
+      videoHtml +
       (p.summary ? '<div class="plan-summary">' + esc(p.summary) + '</div>' : '') +
       (p.recommended_action ? '<div class="plan-rec"><span class="plan-rec-label">Why it matters </span>' + esc(p.recommended_action) + '</div>' : '') +
       taskHtml +
@@ -265,6 +280,11 @@ function selectLevel(pi, maxLevel) {
 
 function selectNone(pi) {
   plans[pi]._selected = new Set();
+  render();
+}
+
+function toggleVideo(pi) {
+  plans[pi]._videoOpen = !plans[pi]._videoOpen;
   render();
 }
 
