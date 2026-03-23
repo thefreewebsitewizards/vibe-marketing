@@ -149,9 +149,10 @@ Rules for content_response:
 Rules for video_breakdown:
 - Write main_points as if you're taking notes on the video for someone who hasn't watched it
 - Order main_points chronologically (how the creator presents them)
+- CAPTURE EVERYTHING. If the video lists 20, 30, or 50 specific techniques/tips/points, list ALL of them — do NOT summarize a list down to 5 generic points. The whole value is in the specifics.
 - key_quotes must be EXACT words from the transcript, not paraphrased
 - For creator_context, note their niche, follower count if mentioned, or relevant credentials
-- Minimum 3 main_points, maximum 6
+- Minimum 3 main_points, NO MAXIMUM — match the video's density
 - Minimum 2 key_quotes, maximum 5
 
 Rules for key_insights:
@@ -159,7 +160,8 @@ Rules for key_insights:
 - Frame each as "We could..." or "Apply this by..."
 - Relate to our business (lead gen, AI automation, local service marketing)
 - When the reel names specific tools, APIs, repos, or URLs — include them by name
-- Minimum 3, maximum 7 insights
+- If the video is a dense list of techniques, capture ALL the actionable ones — not just a generic top 5
+- Minimum 3, maximum 20 insights (scale with video density)
 
 Rules for business_applications — THINK IN LAYERS:
 - Each must name a specific target_system we'd implement it in

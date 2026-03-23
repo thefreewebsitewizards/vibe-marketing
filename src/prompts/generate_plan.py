@@ -130,6 +130,7 @@ Rules for tool_data — CRITICAL for automated execution:
 - For "claude_code" tasks: {{"files_to_modify": ["path/to/file.py"], "change_description": "..."}}
 - For "website" tasks: {{"page": "homepage|about|pricing", "changes": ["..."]}}
 - For "knowledge_base" tasks (PREFERRED for L1): {{"title": "Short insight title", "content": "The insight or note to save", "category": "ai_automation|sales|marketing|operations|product", "tags": ["tag1", "tag2"]}}
+- DENSE VIDEOS: If the analysis lists 10+ main_points or key_insights, the L1 knowledge_base entry MUST include ALL of them — not a summary. The whole value of a list video is the specific points. Put them all in the content field.
 - Every task MUST have populated tool_data
 - L1 tasks should ALWAYS use "knowledge_base" tool unless they specifically modify an existing system"""
 
