@@ -199,6 +199,7 @@ def review_queue():
             "tasks": [
                 {
                     "title": t.get("title", ""),
+                    "description": t.get("description", ""),
                     "level": t.get("level", 1),
                     "tools": t.get("tools", []),
                     "change_type": t.get("change_type", ""),
