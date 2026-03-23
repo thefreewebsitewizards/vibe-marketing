@@ -81,7 +81,7 @@ class TestHandleSalesScript:
              patch("src.utils.script_manager.get_section", return_value={"id": "intro", "content": "old"}):
             result = _handle_sales_script(task, tool_data, "/tmp/plan")
 
-        mock_update.assert_called_once_with("intro", "New intro text")
+        mock_update.assert_called_once_with("intro", "New intro text", source="plan")
         assert "Updated section 'intro'" in result
 
     def test_should_extract_section_id_from_description(self):

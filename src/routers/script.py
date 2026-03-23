@@ -1,10 +1,13 @@
 """Script flowchart editor — serves page + JSON API."""
+import json
 from pathlib import Path
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 
+from src.config import settings
+from src.utils.auth import require_api_key
 from src.utils.script_manager import get_script_json, get_section, update_section
 
 router = APIRouter()
@@ -48,3 +51,19 @@ def api_update_section(section_id: str, body: SectionUpdate):
     if updated is None:
         raise HTTPException(status_code=404, detail=f"Section not found: {section_id}")
     return updated
+
+
+@router.get("/api/script/changelog")
+def api_script_changelog(tail: int = Query(default=50, le=200), _: str = Depends(require_api_key)):
+    """Return recent script change history."""
+    log_path = Path(settings.plans_dir) / "_script_changelog.jsonl"
+    if not log_path.exists():
+        return {"changes": []}
+    lines = log_path.read_text().strip().split("\n")
+    entries = []
+    for line in lines[-tail:]:
+        try:
+            entries.append(json.loads(line))
+        except json.JSONDecodeError:
+            continue
+    return {"changes": entries}

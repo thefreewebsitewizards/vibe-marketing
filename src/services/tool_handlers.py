@@ -33,17 +33,20 @@ def handle_sales_script(task: dict, tool_data: dict, plan_dir: str) -> str:
 
     note = tool_data.get("note", "")
 
+    # Extract source reel_id from plan_dir for changelog
+    source = Path(plan_dir).name if plan_dir else ""
+
     if note and not new_content:
         current = existing.get("content", "") if isinstance(existing, dict) else str(existing)
         appended = f"{current}\n\nNote: {note}"
-        update_section(section_id, appended)
+        update_section(section_id, appended, source=source)
         logger.info(f"Added note to sales script section '{section_id}'")
         return f"[sales_script] Added note to section '{section_id}': {note[:80]}"
 
     if not new_content:
         return f"[sales_script] Section '{section_id}' found but no new_content provided -- logged for manual update"
 
-    update_section(section_id, new_content)
+    update_section(section_id, new_content, source=source)
     logger.info(f"Updated sales script section '{section_id}'")
     return f"[sales_script] Updated section '{section_id}'"
 
