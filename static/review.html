@@ -144,7 +144,8 @@ function render() {
 
     return '<div class="' + cls + '" id="plan-' + pi + '">' +
       '<div class="plan-title">' + esc(p.title) + '</div>' +
-      '<div class="plan-meta">' + esc(p.category) + ' &middot; ' + (p.relevance_score * 100).toFixed(0) + '% &middot; ' + p.reel_id + '</div>' +
+      '<div class="plan-meta">' + esc(p.creator || '') + ' &middot; ' + esc(p.category) + ' &middot; ' + (p.relevance_score * 100).toFixed(0) + '%</div>' +
+      (p.theme ? '<div style="color:#94a3b8;font-size:0.8rem;font-style:italic;margin-bottom:6px;">' + esc(p.theme) + '</div>' : '') +
       '<div class="plan-rec">' + esc(p.recommended_action) + '</div>' +
       taskHtml +
       '<div class="quick-btns">' +

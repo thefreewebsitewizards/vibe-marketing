@@ -153,17 +153,25 @@ def review_queue():
         rec_action = ""
         category = ""
         relevance = 0.0
+        theme = ""
+        creator = ""
         if plan_json.exists():
             try:
                 pd = json.loads(plan_json.read_text())
                 tasks = pd.get("tasks", [])
                 rec_action = pd.get("recommended_action", "")
-                # Read analysis for category/relevance
+                # Read analysis for category/relevance/theme
                 analysis_path = settings.plans_dir / p["plan_dir"] / "analysis.json"
                 if analysis_path.exists():
                     ad = json.loads(analysis_path.read_text())
                     category = ad.get("category", "")
                     relevance = ad.get("relevance_score", 0.0)
+                    theme = ad.get("theme", "")
+                # Read metadata for creator
+                meta_path = settings.plans_dir / p["plan_dir"] / "metadata.json"
+                if meta_path.exists():
+                    md = json.loads(meta_path.read_text())
+                    creator = md.get("creator", "")
             except (json.JSONDecodeError, OSError):
                 pass
 
@@ -171,6 +179,8 @@ def review_queue():
             "reel_id": p.get("reel_id", ""),
             "title": p.get("title", "Untitled"),
             "recommended_action": rec_action,
+            "theme": theme,
+            "creator": creator,
             "category": category,
             "relevance_score": relevance,
             "tasks": [
