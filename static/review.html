@@ -154,7 +154,11 @@ function render() {
         '<button class="qb" onclick="selectNone(' + pi + ')">Clear</button>' +
       '</div>' +
       '<button class="notes-toggle" onclick="toggleNotes(' + pi + ')">+ add notes</button>' +
-      '<input class="notes-input" id="notes-' + pi + '" placeholder="Optional notes (conditions, changes, context...)">' +
+      '<input class="notes-input" id="notes-' + pi + '"' +
+        ' value="' + esc(p._notes || '') + '"' +
+        ' style="display:' + (p._notesOpen ? 'block' : 'none') + '"' +
+        ' oninput="plans[' + pi + ']._notes=this.value"' +
+        ' placeholder="Optional notes (conditions, changes, context...)">' +
       '<div class="action-row">' +
         '<button class="btn btn-approve" id="approve-' + pi + '" onclick="approve(' + pi + ')">Approve</button>' +
         '<button class="btn btn-skip" onclick="skip(' + pi + ')">Skip</button>' +
@@ -188,16 +192,16 @@ function selectNone(pi) {
 }
 
 function toggleNotes(pi) {
-  var el = document.getElementById('notes-' + pi);
-  el.style.display = el.style.display === 'none' ? '' : 'none';
-  if (el.style.display !== 'none') el.focus();
+  plans[pi]._notesOpen = !plans[pi]._notesOpen;
+  render();
+  if (plans[pi]._notesOpen) document.getElementById('notes-' + pi).focus();
 }
 
 async function approve(pi) {
   var p = plans[pi];
   var sel = p._selected ? Array.from(p._selected) : [];
   if (sel.length === 0) { selectLevel(pi, 2); sel = Array.from(plans[pi]._selected); }
-  var notes = (document.getElementById('notes-' + pi) || {}).value || '';
+  var notes = p._notes || '';
 
   var btn = document.getElementById('approve-' + pi);
   btn.disabled = true;
