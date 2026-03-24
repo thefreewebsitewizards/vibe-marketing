@@ -252,12 +252,10 @@ def _run_pipeline(reel_id: str, reel_url: str, user_context: str = "") -> None:
             cost_breakdown=costs,
         )
 
-        # Remove the placeholder processing entry before write_plan adds the real one
+        # Remove ALL old entries for this reel_id before write_plan adds the new one
+        # (handles retries of failed/skipped plans creating duplicates)
         index = get_index()
-        index["plans"] = [
-            e for e in index["plans"]
-            if not (e["reel_id"] == reel_id and e["status"] == PlanStatus.PROCESSING.value)
-        ]
+        index["plans"] = [e for e in index["plans"] if e["reel_id"] != reel_id]
         save_index(index)
 
         write_plan(result)
