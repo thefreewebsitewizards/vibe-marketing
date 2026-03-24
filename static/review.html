@@ -286,8 +286,6 @@ function render() {
         (p.recommended_action ? '<div class="plan-rec"><span class="plan-rec-label">Why it matters </span>' + esc(p.recommended_action) + '</div>' : '') +
         taskHtml +
         '<div class="quick-btns">' +
-          '<button class="qb" onclick="selectLevel(' + pi + ',1)">L1</button>' +
-          '<button class="qb" onclick="selectLevel(' + pi + ',2)">L1+L2</button>' +
           '<button class="qb" onclick="selectLevel(' + pi + ',3)">All</button>' +
           '<button class="qb" onclick="selectNone(' + pi + ')">Clear</button>' +
         '</div>' +
@@ -524,6 +522,16 @@ function esc(s) {
   d.textContent = s;
   return d.innerHTML;
 }
+
+// Pre-check L1 (Note) tasks for all plans
+plans.forEach(function(p) {
+  if (!p._selected) {
+    p._selected = new Set();
+    (p.tasks || []).forEach(function(t, ti) {
+      if ((t.level || 1) <= 1) p._selected.add(ti);
+    });
+  }
+});
 
 render();
 renderFailed();

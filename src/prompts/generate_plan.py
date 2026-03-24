@@ -105,7 +105,7 @@ Return JSON:
       "requires_human": false,
       "human_reason": "",
       "tool_data": {{}},
-      "change_type": "addition|replacement|reinforcement|ignore"
+      "change_type": "addition|replacement|reinforcement"
     }}
   ]
 }}
@@ -119,6 +119,11 @@ Level rules:
 - Total tasks: 3-4. Lean is better.
 - DO NOT fill L3 with content creation just because you need a task — only include L3 if there's genuine value.
 - TASKS MUST MAP TO BUSINESS APPLICATIONS. Each task should directly implement one of the business_applications from the analysis. Don't invent tasks that have no corresponding business application, and don't leave high-urgency applications without a task.
+- change_type MUST be set accurately on EVERY task:
+  - "addition" = this is NEW — nothing like it exists in our systems yet
+  - "replacement" = this REPLACES something we already have (e.g. rewriting a script section, swapping a technique)
+  - "reinforcement" = we already do something similar, this strengthens/validates it
+  - If there's a comparison section, use its verdicts. If not, judge based on the business context and existing capabilities listed above.
 
 Rules for tool_data — CRITICAL for automated execution:
 - WITHOUT tool_data, tasks just get logged and nothing happens
