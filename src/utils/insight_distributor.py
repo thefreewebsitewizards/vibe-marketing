@@ -16,8 +16,10 @@ PROJECTS_BASE = Path.home() / "projects" / "openclaw" / "claude-code-projects"
 # Topic → which project folders get insights + sub-folder name
 TOPIC_ROUTING = {
     "sales": [
-        {"project": "tfww", "folder": "sales", "context": "Free website offer sales — cold outreach, objection handling, closing on video call for free website + hosting upsell"},
-        {"project": "gnomeguys", "folder": "sales", "context": "In-person airport sales — selling Masters Tournament merch to private jet travelers while working as baggage assist"},
+        {"project": "closersim", "folder": "sales-hub", "context": "Master sales knowledge hub — ALL closing techniques, objection handling, discovery, call structure, negotiation. CloserSim is the central repo for sales knowledge."},
+        {"project": "tfww", "folder": "sales", "context": "Free website offer sales — closing on video call for free website + hosting upsell"},
+        {"project": "gnomeguys", "folder": "sales", "context": "In-person airport sales — selling Masters merch to private jet travelers"},
+        {"project": "aias", "folder": "sales", "context": "AI appointment setting — sales psychology for SMS/iMessage qualification and booking"},
     ],
     "web_design": [
         {"project": "tfww", "folder": "web-design", "context": "Autonomous web design — CSS, layouts, UX, conversion optimization for client websites"},
@@ -40,6 +42,7 @@ TOPIC_ROUTING = {
         {"project": "gnomeguys", "folder": "reel-insights", "context": "E-commerce store (Shopify + Next.js) — product pages, cart optimization, email flows, Shopify tips, conversion optimization"},
     ],
     "appointment_setting": [
+        {"project": "closersim", "folder": "sales-hub", "context": "Appointment setting techniques feed into sales simulator drills and AI prospect scenarios"},
         {"project": "aias", "folder": "reel-insights", "context": "AI appointment setting via iMessage/SMS — lead qualification, booking, follow-up"},
     ],
     "funnel": [
@@ -47,7 +50,7 @@ TOPIC_ROUTING = {
         {"project": "aias", "folder": "reel-insights", "context": "High ticket funnel — ads → landing page → AIAS books → close on video call"},
     ],
     "sales_training": [
-        {"project": "closersim", "folder": "reel-insights", "context": "AI sales call simulator — objection handling drills, closing techniques, NLP personality profiles"},
+        {"project": "closersim", "folder": "sales-hub", "context": "AI sales call simulator — objection handling drills, closing techniques, discovery questions, NLP personality profiles"},
     ],
     "claude_code": [
         {"project": "claude-upgrades", "folder": "reel-insights", "context": "Claude Code improvements — new skills, prompt engineering, token optimization, MCP management"},
@@ -59,7 +62,7 @@ TOPIC_ROUTING = {
 
 # Category → which topics it maps to
 CATEGORY_TO_TOPICS = {
-    "sales": ["sales", "funnel", "sales_training"],
+    "sales": ["sales", "funnel", "sales_training", "appointment_setting"],
     "marketing": ["marketing", "sales", "funnel", "ecommerce"],
     "ai_automation": ["ai_automation", "claude_code", "openclaw_system"],
     "social_media": ["content_creation", "marketing"],
