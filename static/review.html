@@ -253,13 +253,15 @@ function render() {
     if (p.category) metaParts.push(esc(p.category));
     metaParts.push((p.relevance_score * 100).toFixed(0) + '%');
 
-    var embedUrl = p.source_url ? p.source_url.replace(/\/$/, '') + '/embed/' : '';
     var videoId = 'video-' + pi;
-    var videoHtml = p.source_url ?
-      '<div class="video-embed" id="' + videoId + '">' +
+    var videoHtml = '';
+    if (p.source_url) {
+      var embedUrl = p.source_url.replace(/\/$/, '') + '/embed/';
+      videoHtml = '<div class="video-embed" id="' + videoId + '">' +
         '<iframe src="' + esc(embedUrl) + '" loading="lazy" allowfullscreen ' +
-          'onload="checkEmbed(this,' + pi + ')" onerror="embedFallback(' + pi + ')"></iframe>' +
-      '</div>' : '';
+          'onerror="embedFallback(' + pi + ')"></iframe>' +
+      '</div>';
+    }
 
     return '<div class="' + cls + '" id="plan-' + pi + '">' +
       '<div class="plan-content">' +
@@ -296,24 +298,25 @@ function render() {
 function embedFallback(pi) {
   var el = document.getElementById('video-' + pi);
   var url = plans[pi].source_url || '';
-  if (el && url) {
+  if (el) {
     el.innerHTML = '<div class="video-fallback"><a href="' + esc(url) + '" target="_blank">Watch on Instagram</a></div>';
   }
 }
 
-function checkEmbed(iframe, pi) {
-  // Instagram embeds that fail still fire onload but render tiny or blank.
-  // Check after a delay if the iframe content loaded properly.
-  setTimeout(function() {
-    try {
-      // If we can't access contentWindow it's cross-origin (expected for working embeds)
-      // But if the iframe is very small, it likely failed
-      if (iframe.offsetHeight < 50) embedFallback(pi);
-    } catch(e) {
-      // Cross-origin access error = embed loaded (good)
+// After page loads, check all embeds for the "refused to connect" case
+// Those iframes will have tiny height because they didn't render
+setTimeout(function() {
+  document.querySelectorAll('.video-embed').forEach(function(el) {
+    var iframe = el.querySelector('iframe');
+    if (!iframe) return;
+    // "Refused to connect" iframes render at ~0px or show browser error
+    // Instagram's "broken link" page renders ~150px tall vs working embeds ~500px+
+    if (iframe.offsetHeight < 100) {
+      var pi = parseInt(el.id.replace('video-', ''));
+      if (!isNaN(pi)) embedFallback(pi);
     }
-  }, 3000);
-}
+  });
+}, 5000);
 
 function updateCard(pi) {
   // Targeted update — only touch checkboxes, descriptions, notes, buttons. Never touch iframes.

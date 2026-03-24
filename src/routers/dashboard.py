@@ -192,6 +192,7 @@ def _load_plan_card(p: dict) -> dict:
             pass
 
     error_detail = error_detail or p.get("error_detail", "")
+    final_url = source_url or p.get("source_url", "")
 
     return {
         "reel_id": p.get("reel_id", ""),
@@ -199,7 +200,7 @@ def _load_plan_card(p: dict) -> dict:
         "status": p.get("status", ""),
         "recommended_action": rec_action,
         "summary": summary,
-        "source_url": source_url or p.get("source_url", ""),
+        "source_url": final_url,
         "theme": theme,
         "creator": creator,
         "category": category,
