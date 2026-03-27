@@ -217,9 +217,13 @@ def _run_pipeline(reel_id: str, reel_url: str, user_context: str = "") -> None:
             analysis, analysis_cr = analyze_carousel(ocr_text, metadata, image_paths, user_context=user_context)
         else:
             video_path = download_result
-            audio_path = extract_audio(video_path, temp_dir)
             frame_paths = extract_keyframes(video_path, temp_dir)
-            transcript = transcribe(audio_path)
+            try:
+                audio_path = extract_audio(video_path, temp_dir)
+                transcript = transcribe(audio_path)
+            except RuntimeError:
+                logger.warning(f"No audio stream in {reel_id}, using caption + visual analysis only")
+                transcript = TranscriptResult(text=metadata.caption or "", language="en")
             analysis, analysis_cr = analyze_reel(transcript, metadata, frame_paths, user_context=user_context)
         costs.add("analysis", analysis_cr.model, analysis_cr.prompt_tokens, analysis_cr.completion_tokens, analysis_cr.cost_usd, analysis_cr.generation_id)
 
