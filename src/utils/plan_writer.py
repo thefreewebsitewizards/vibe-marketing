@@ -13,6 +13,7 @@ from src.models import PipelineResult, PlanIndexEntry, PlanStatus, Implementatio
 from src.utils.plan_router import route_plan
 from src.utils.html_renderer import render_plan_html, html_esc as _html_esc, md_to_html as _md_to_html
 from src.utils.plan_formatter import format_notes_md
+from src.utils.reel_registry import append_reel_entry
 
 
 def write_plan(result: PipelineResult) -> Path:
@@ -66,6 +67,9 @@ def write_plan(result: PipelineResult) -> Path:
 
     # Update index
     _update_index(result, plan_dir_name, routed_to=routed_to)
+
+    # Append to central reel registry
+    append_reel_entry(result)
 
     result.plan_dir = str(plan_dir)
     logger.info(f"Plan written to {plan_dir}")

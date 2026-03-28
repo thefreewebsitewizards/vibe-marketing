@@ -385,3 +385,16 @@ def changes_api(
     entries = get_changes(limit=limit, change_type=type)
     summary = get_changes_summary()
     return {"changes": entries, "summary": summary, "total": sum(summary.values())}
+
+
+@router.get("/reels")
+def reels_api(
+    limit: int = Query(default=50, le=500),
+    category: str = Query(default=""),
+    search: str = Query(default=""),
+):
+    """Query the central reel registry — all info about every processed reel."""
+    from src.utils.reel_registry import load_registry, registry_stats
+    entries = load_registry(limit=limit, category=category, search=search)
+    stats = registry_stats()
+    return {"reels": entries, "stats": stats}
