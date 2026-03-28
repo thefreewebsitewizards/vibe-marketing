@@ -38,8 +38,6 @@ from src.utils.plan_manager import (
     is_duplicate,
 )
 from src.services.telegram_similarity import (
-    save_analysis_for_resume,
-    send_similarity_notification,
     handle_generate_anyway,
     handle_skip_similar,
 )
@@ -288,19 +286,9 @@ async def _process_reel_inner(update, reel_id, url, user_context, chat_id):
             pass
 
     try:
-        pipeline_out = await _run_telegram_pipeline(
+        result = await _run_telegram_pipeline(
             reel_id, url, user_context, _progress,
         )
-        if pipeline_out is None:
-            # Similarity flow handled it -- should not happen, indicates a bug
-            return
-        if isinstance(pipeline_out, tuple):
-            # Similarity detected: (analysis, similarity, costs)
-            analysis, similarity, costs = pipeline_out
-            await send_similarity_notification(update, reel_id, analysis, similarity, costs)
-            return
-
-        result = pipeline_out
         write_plan(result)
         cleanup_temp_dir(reel_id)
 
@@ -347,12 +335,8 @@ async def _run_telegram_pipeline(
     url: str,
     user_context: str,
     progress_cb,
-) -> PipelineResult | tuple:
-    """Run the download-transcribe-analyze-plan pipeline.
-
-    Returns PipelineResult on success, or a (analysis, similarity, costs)
-    tuple if similarity was detected and the caller should notify.
-    """
+) -> PipelineResult:
+    """Run the download-transcribe-analyze-plan pipeline."""
     temp_dir = create_temp_dir(reel_id)
     costs = CostBreakdown()
 
@@ -392,11 +376,6 @@ async def _run_telegram_pipeline(
             "similarity", sim_cr.model, sim_cr.prompt_tokens,
             sim_cr.completion_tokens, sim_cr.cost_usd, sim_cr.generation_id,
         )
-
-    if similarity.recommendation == "skip":
-        save_analysis_for_resume(reel_id, analysis, metadata, similarity, costs, transcript)
-        cleanup_temp_dir(reel_id)
-        return (analysis, similarity, costs)
 
     await progress_cb(4, "Generating plan...")
     plan, plan_cr = await asyncio.to_thread(

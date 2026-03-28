@@ -25,137 +25,91 @@ def _parse_level(value) -> int:
 
 
 def check_plan_similarity(analysis: AnalysisResult) -> tuple[SimilarityResult, ChatResult | None]:
-    """Check if new analysis overlaps with existing plans."""
-    existing_plans = get_past_plan_summaries(limit=15)
+    """Find what new value this analysis adds beyond existing plans.
+
+    Never skips — always returns recommendation="generate". The output
+    tells the plan generator which areas are already covered (so it can
+    focus on the delta) and which are genuinely new.
+    """
+    existing_plans = get_past_plan_summaries(limit=20)
     if not existing_plans:
-        return SimilarityResult(), None
+        return SimilarityResult(recommendation="generate"), None
 
     system = (
-        "You compare a new content analysis against existing plans to detect overlap. "
+        "You are a value-delta analyst. Your job is NOT to detect duplicates — "
+        "it is to find what NEW value this reel adds beyond what we already have. "
+        "Two reels on the same topic almost always teach different tactics, "
+        "frameworks, or angles. Focus on the unique contribution. "
         "Respond with valid JSON only."
     )
-    user_content = f"""Compare this new analysis against our existing plans and score similarity.
+    user_content = f"""Analyze what NEW value this reel adds beyond our existing plans.
 
-**New analysis:**
+**New reel analysis:**
 - Theme: {analysis.theme}
 - Category: {analysis.category}
 - Summary: {analysis.summary}
-- Key insights: {', '.join(analysis.key_insights[:5])}
+- Key insights: {', '.join(analysis.key_insights[:8])}
+- Business applications: {', '.join(a.recommendation for a in analysis.business_applications[:5])}
 
-**Existing plans:**
+**Existing plans we already have:**
 {existing_plans}
 
 Return JSON:
 {{
-  "similar_plans": [
+  "related_plans": [
     {{
-      "title": "Title of the existing plan",
+      "title": "Title of the related existing plan",
       "reel_id": "ID from the brackets",
-      "score": 0-100,
-      "overlap_areas": ["area1", "area2"]
+      "overlap_areas": ["area1"],
+      "new_value": "What THIS reel adds that the existing plan doesn't cover (be specific)"
     }}
   ],
-  "recommendation": "generate|skip|merge"
+  "unique_contributions": ["specific tactic/framework/angle this reel brings that no existing plan covers"],
+  "focus_guidance": "1-2 sentences telling the plan generator what to emphasize (the new stuff) and what to skip (already well-covered)"
 }}
 
 Rules:
-- Only include plans with score > 30
-- score 70+ means very similar (consider skipping)
-- score 40-69 means some overlap (generate but note it)
-- score <40 means different enough (generate freely)
-- recommendation: "skip" if max score > 85, "merge" if 70-85, "generate" otherwise
-- Maximum 3 similar plans in the list"""
+- Only include related plans that share a topic area — max 3
+- Every reel has SOMETHING new. Even if the topic overlaps, the specific tactics, examples, frameworks, or angles differ. Find them.
+- "new_value" should be specific: not "different perspective" but "teaches the 3-2-1 email framework for re-engagement"
+- "unique_contributions" is the most important field — what does this reel teach that we don't already have?
+- "focus_guidance" steers the plan generator to avoid retreading old ground"""
 
     try:
-        chat_result = chat(system=system, user_content=user_content, max_tokens=500, model_override=get_model_for_step("similarity"))
+        chat_result = chat(system=system, user_content=user_content, max_tokens=600, model_override=get_model_for_step("similarity"))
         data = extract_json(chat_result.text, context="similarity")
         similar = [
             SimilarPlan(
                 title=p.get("title", ""),
                 reel_id=p.get("reel_id", ""),
-                score=int(p.get("score", 0)),
+                score=0,
                 overlap_areas=p.get("overlap_areas", []),
+                comparisons=[ContentComparison(
+                    area="new value",
+                    new_content=p.get("new_value", ""),
+                    verdict="different_angle",
+                )] if p.get("new_value") else [],
             )
-            for p in data.get("similar_plans", [])
+            for p in data.get("related_plans", [])
         ]
-        plans_to_enrich = [p for p in similar if p.score > 30]
-        if plans_to_enrich:
-            _enrich_with_comparisons(analysis, plans_to_enrich)
+
+        # Build focus guidance from unique contributions + guidance
+        unique = data.get("unique_contributions", [])
+        guidance = data.get("focus_guidance", "")
 
         max_score = max((p.score for p in similar), default=0)
-        return SimilarityResult(
+        result = SimilarityResult(
             similar_plans=similar,
-            recommendation=data.get("recommendation", "generate"),
+            recommendation="generate",
             max_score=max_score,
-        ), chat_result
+        )
+        # Stash guidance for the plan generator (accessed via _build_comparison_context)
+        result._focus_guidance = guidance
+        result._unique_contributions = unique
+        return result, chat_result
     except (json.JSONDecodeError, IndexError, KeyError) as e:
         logger.warning(f"Similarity check failed to parse: {e}")
-        return SimilarityResult(), chat_result
-
-
-def _enrich_with_comparisons(
-    analysis: AnalysisResult,
-    plans: list[SimilarPlan],
-) -> None:
-    """Load plan.md content for top matches and ask the LLM for per-area comparisons."""
-    for plan in plans[:3]:
-        try:
-            plan_content = load_plan_content(plan.reel_id)
-            if not plan_content:
-                continue
-
-            system = (
-                "You compare an existing plan against a new analysis to find "
-                "per-area content differences. Respond with valid JSON only."
-            )
-            user_content = f"""Compare the existing plan content against the new analysis.
-
-**Existing plan ({plan.title}):**
-{plan_content}
-
-**New analysis:**
-- Theme: {analysis.theme}
-- Category: {analysis.category}
-- Summary: {analysis.summary}
-- Key insights: {', '.join(analysis.key_insights[:5])}
-
-Return JSON:
-{{
-  "comparisons": [
-    {{
-      "area": "specific topic area",
-      "current_content": "what existing plan says (1 sentence)",
-      "new_content": "what new reel adds (1 sentence)",
-      "verdict": "better|worse|same|different_angle",
-      "explanation": "1 sentence why"
-    }}
-  ]
-}}
-
-Rules:
-- Maximum 3 comparisons
-- Focus on the most meaningful differences
-- verdict must be one of: better, worse, same, different_angle"""
-
-            result = chat(
-                system=system,
-                user_content=user_content,
-                max_tokens=500,
-                model_override=get_model_for_step("similarity"),
-            )
-            data = extract_json(result.text, context="enrichment")
-            plan.comparisons = [
-                ContentComparison(
-                    area=c.get("area", ""),
-                    current_content=c.get("current_content", ""),
-                    new_content=c.get("new_content", ""),
-                    verdict=c.get("verdict", ""),
-                    explanation=c.get("explanation", ""),
-                )
-                for c in data.get("comparisons", [])[:3]
-            ]
-        except Exception as exc:
-            logger.warning(f"Enrichment failed for plan {plan.reel_id}: {exc}")
+        return SimilarityResult(recommendation="generate"), chat_result
 
 
 def generate_plan(analysis: AnalysisResult, metadata: ReelMetadata, user_context: str = "", similarity: SimilarityResult | None = None) -> tuple[ImplementationPlan, ChatResult]:
@@ -176,21 +130,23 @@ def generate_plan(analysis: AnalysisResult, metadata: ReelMetadata, user_context
     comparison_context = ""
     if similarity:
         lines = []
+        # Focus guidance from the delta analysis
+        guidance = getattr(similarity, "_focus_guidance", "")
+        unique = getattr(similarity, "_unique_contributions", [])
+        if guidance:
+            lines.append(f"**Focus guidance:** {guidance}")
+        if unique:
+            lines.append("**Unique contributions from this reel:**")
+            for u in unique:
+                lines.append(f"- {u}")
+        # Related plans context
         for sp in similarity.similar_plans:
             if sp.comparisons:
                 for c in sp.comparisons:
-                    verdict_action = {
-                        "better": "REPLACE the old approach",
-                        "different_angle": "ADD alongside existing",
-                        "same": "SKIP — already covered",
-                        "worse": "IGNORE — existing is better",
-                    }.get(c.verdict, c.verdict)
-                    lines.append(
-                        f"- **{c.area}** [{c.verdict}] → {verdict_action}\n"
-                        f"  Existing: {c.current_content[:150]}\n"
-                        f"  This reel: {c.new_content[:150]}"
-                        + (f"\n  Why: {c.explanation[:150]}" if c.explanation else "")
-                    )
+                    if c.new_content:
+                        lines.append(
+                            f"- Related to \"{sp.title}\": This reel adds: {c.new_content[:200]}"
+                        )
         if lines:
             comparison_context = "\n".join(lines)
 

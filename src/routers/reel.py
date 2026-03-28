@@ -10,7 +10,7 @@ from src.config import settings
 from src.utils.auth import require_api_key
 from src.models import (
     ReelRequest, PipelineResult, PlanStatus, TranscriptResult,
-    CostBreakdown, AnalysisResult, ReelMetadata, SimilarityResult,
+    CostBreakdown,
 )
 from src.services.downloader import download_reel, extract_shortcode
 from src.services.audio import extract_audio
@@ -79,125 +79,6 @@ def _update_processing_entry(reel_id: str, status: PlanStatus, error: str = "") 
     save_index(index)
 
 
-def _save_analysis_for_resume(
-    reel_id: str,
-    analysis: AnalysisResult,
-    metadata: ReelMetadata,
-    similarity: SimilarityResult,
-    costs: CostBreakdown,
-) -> str:
-    """Save analysis artifacts to disk so the pipeline can be resumed later.
-
-    Returns the plan directory name (e.g. '2026-03-08_ABC123').
-    """
-    date_str = datetime.now().strftime("%Y-%m-%d")
-    plan_dir_name = f"{date_str}_{reel_id}"
-    plan_dir = settings.plans_dir / plan_dir_name
-    plan_dir.mkdir(parents=True, exist_ok=True)
-
-    (plan_dir / "analysis.json").write_text(
-        json.dumps(analysis.model_dump(), indent=2)
-    )
-    (plan_dir / "metadata.json").write_text(json.dumps({
-        "reel_id": reel_id,
-        "source_url": metadata.url,
-        "creator": metadata.creator,
-        "shortcode": metadata.shortcode,
-        "caption": metadata.caption,
-        "duration": metadata.duration,
-        "content_type": metadata.content_type,
-        "status": PlanStatus.SKIPPED.value,
-        "created_at": datetime.now().isoformat(),
-        "cost_breakdown": costs.model_dump() if costs else None,
-    }, indent=2))
-    (plan_dir / "similarity.json").write_text(
-        json.dumps(similarity.model_dump(), indent=2)
-    )
-
-    logger.info(f"Saved analysis for resume at {plan_dir}")
-    return plan_dir_name
-
-
-def _notify_similarity_telegram(
-    reel_id: str,
-    analysis: AnalysisResult,
-    similarity: SimilarityResult,
-) -> None:
-    """Send a Telegram notification about similarity detection.
-
-    Uses the bot application to send a message with inline buttons.
-    Non-blocking: failures are logged but not raised.
-    """
-    from src.services.telegram_bot import get_bot_app
-
-    chat_id = settings.telegram_chat_id
-    if not chat_id:
-        logger.warning("telegram_chat_id not configured, skipping similarity notification")
-        return
-
-    bot_app = get_bot_app()
-    if not bot_app:
-        logger.warning("Telegram bot not running, skipping similarity notification")
-        return
-
-    def _esc(text: str) -> str:
-        if not text:
-            return text
-        for ch in ("*", "_", "`", "["):
-            text = text.replace(ch, "\\" + ch)
-        return text
-
-    # Build similarity details
-    similar_lines = []
-    for sp in similarity.similar_plans:
-        overlap = ", ".join(sp.overlap_areas) if sp.overlap_areas else "general"
-        similar_lines.append(f"  - {_esc(sp.title)} ({sp.score}% match, overlap: {_esc(overlap)})")
-    similar_text = "\n".join(similar_lines)
-
-    theme_text = f"*Theme:* {_esc(analysis.theme)}\n" if analysis.theme else ""
-
-    message = (
-        f"*Similar content detected*\n\n"
-        f"{theme_text}"
-        f"*Summary:* {_esc(analysis.summary[:200])}\n\n"
-        f"*Similar to:*\n{similar_text}\n\n"
-        f"Recommendation: {_esc(similarity.recommendation)}"
-    )
-
-    from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-
-    keyboard = InlineKeyboardMarkup([
-        [
-            InlineKeyboardButton(
-                "Generate Anyway", callback_data=f"generate_anyway:{reel_id}",
-            ),
-            InlineKeyboardButton(
-                "Skip", callback_data=f"skip_similar:{reel_id}",
-            ),
-        ]
-    ])
-
-    import asyncio
-    from src.services.telegram_bot import get_bot_loop
-
-    async def _send():
-        await bot_app.bot.send_message(
-            chat_id=int(chat_id),
-            text=message,
-            parse_mode="Markdown",
-            reply_markup=keyboard,
-        )
-
-    try:
-        bot_loop = get_bot_loop()
-        if not bot_loop:
-            logger.warning("Telegram bot loop not available, skipping notification")
-            return
-        future = asyncio.run_coroutine_threadsafe(_send(), bot_loop)
-        future.result(timeout=10)
-    except Exception as e:
-        logger.error(f"Failed to send similarity notification: {e}")
-
 
 def _run_pipeline(reel_id: str, reel_url: str, user_context: str = "") -> None:
     """Run the full pipeline in a background thread."""
@@ -230,15 +111,6 @@ def _run_pipeline(reel_id: str, reel_url: str, user_context: str = "") -> None:
         similarity, sim_cr = check_plan_similarity(analysis)
         if sim_cr:
             costs.add("similarity", sim_cr.model, sim_cr.prompt_tokens, sim_cr.completion_tokens, sim_cr.cost_usd, sim_cr.generation_id)
-
-        if similarity.recommendation == "skip":
-            logger.info(f"Skipping {reel_id}: too similar to existing plans (max_score={similarity.max_score})")
-            _save_analysis_for_resume(reel_id, analysis, metadata, similarity, costs)
-            _update_processing_entry(reel_id, PlanStatus.SKIPPED,
-                f"Too similar to existing plans (score {similarity.max_score})")
-            _notify_similarity_telegram(reel_id, analysis, similarity)
-            cleanup_temp_dir(reel_id)
-            return
 
         plan, plan_cr = generate_plan(analysis, metadata, user_context=user_context, similarity=similarity)
         costs.add("plan", plan_cr.model, plan_cr.prompt_tokens, plan_cr.completion_tokens, plan_cr.cost_usd, plan_cr.generation_id)

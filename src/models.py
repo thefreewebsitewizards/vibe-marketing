@@ -118,7 +118,7 @@ class SimilarPlan(BaseModel):
 
 class SimilarityResult(BaseModel):
     similar_plans: list[SimilarPlan] = []
-    recommendation: str = "generate"  # generate, skip, merge
+    recommendation: str = "generate"  # always "generate" — similarity informs plans, never skips
     max_score: int = 0
 
 
